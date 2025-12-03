@@ -1,0 +1,13 @@
+logging:
+  level:
+    root: INFO
+    com.example.auth: DEBUG
+
+
+spring:
+  application:
+    name: msvc-auth
+
+  config:
+    import: optional:configserver:http://localhost:8888
+

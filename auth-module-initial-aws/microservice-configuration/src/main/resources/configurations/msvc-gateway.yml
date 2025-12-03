@@ -1,0 +1,78 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: msvc-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+              - PATCH
+            allowedHeaders: "*"
+            allowCredentials: true
+            exposedHeaders:
+              - Authorization
+              - Content-Type
+            maxAge: 3600
+
+      routes:
+        # Auth service
+        - id: auth-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=0
+
+        # Inventory service
+        - id: inventory-service
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/inventory/**
+          filters:
+            - StripPrefix=0
+
+        # Notifications service
+        - id: notifications-service
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - StripPrefix=0
+
+        # AWS service
+        - id: aws-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/aws/**
+          filters:
+            - StripPrefix=0
+
+        # WebSocket
+        - id: websocket-service
+          uri: lb://msvc-auth
+          predicates:
+            - Path=/ws/**
+          filters:
+            - StripPrefix=0
+
+security:
+  service:
+    url: http://localhost:8081/api/auth
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true

@@ -1,0 +1,44 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: msvc-auth
+
+  data:
+    redis:
+      host: localhost
+      port: 6380
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/inventory
+    username: root
+    password: ken123
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+      database: mysql
+      database-platform: org.hibernate.MySQL8Dialect
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+  destination:
+    folder: "src/main/java/resources/static"
+
+
+jwt:
+  time:
+    expiration: 3600000
+
+  secret:
+    key: 76397924423F45264828406251655468576D5A7134743777217A25432A46204A
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
