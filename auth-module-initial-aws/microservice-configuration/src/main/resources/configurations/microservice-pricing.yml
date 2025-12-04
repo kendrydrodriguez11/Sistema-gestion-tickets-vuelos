@@ -1,0 +1,43 @@
+server:
+  port: 8087
+
+spring:
+  application:
+    name: microservice-pricing
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/pricing_db
+    username: root
+    password: ken123
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+      database: mysql
+      database-platform: org.hibernate.dialect.MySQL8Dialect
+    show-sql: true
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+pricing:
+  calculation:
+    base-multiplier: 1.0
+    occupancy-high-threshold: 0.7
+    occupancy-medium-threshold: 0.5
+    days-before-high-price: 7
+    days-before-medium-price: 30
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/

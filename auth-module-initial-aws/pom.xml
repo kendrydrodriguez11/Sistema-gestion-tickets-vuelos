@@ -28,6 +28,10 @@
         </module>
         <module>microservice_change</module>
         <module>microservice-notifications</module>
+        <module>microservice-flight</module>
+        <module>microservice-booking</module>
+        <module>microservice-pricing</module>
+        <module>microservice-search</module>
     </modules>
 
     <properties>
