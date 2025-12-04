@@ -1,0 +1,10 @@
+logging:
+  level:
+    root: INFO
+    com.example.microservice_payment: DEBUG
+
+spring:
+  application:
+    name: microservice-payment
+  config:
+    import: optional:configserver:http://localhost:8888

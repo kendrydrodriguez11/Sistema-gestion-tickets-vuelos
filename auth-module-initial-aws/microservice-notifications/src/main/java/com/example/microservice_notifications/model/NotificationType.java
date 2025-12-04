@@ -1,16 +1,22 @@
 package com.example.microservice_notifications.model;
 
-/**
- * Tipos de notificación actualizados para el sistema de vuelto.
- */
 public enum NotificationType {
-    CHANGE_RESERVED,
-    CHANGE_DISPENSED,
-    CHANGE_FAILED,
+    // Reservas
+    BOOKING_CREATED,
+    BOOKING_CONFIRMED,
+    BOOKING_CANCELLED,
+    BOOKING_EXPIRED,
 
-    LOW_DENOMINATION_STOCK,
-    OUT_OF_DENOMINATION,
+    // Pagos
+    PAYMENT_INITIATED,
+    PAYMENT_COMPLETED,
+    PAYMENT_FAILED,
 
+    // Stock/Asientos
+    LOW_SEAT_AVAILABILITY,
+    FLIGHT_FULL,
+
+    // Sistema
     SYSTEM_ALERT,
-    OPERATIONAL_ERROR
+    PRICE_CHANGE
 }

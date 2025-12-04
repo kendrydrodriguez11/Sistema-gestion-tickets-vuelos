@@ -10,10 +10,12 @@
     <file url="file://$PROJECT_DIR$/microservice-gateway/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/microservice-inventory/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/microservice-notifications/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/microservice-payment/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/microservice-pricing/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/microservice-reviews/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/microservice-search/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/microservice_change/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/msvc-auth-oauth2/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/resources" charset="UTF-8" />
   </component>

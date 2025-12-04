@@ -37,12 +37,14 @@ public class FlightDto {
     @NotNull
     private BigDecimal basePrice;
 
+    // NUEVO: Precio actual calculado por pricing dinámico
+    private BigDecimal currentPrice;
+
     private Integer availableSeats;
     private Integer bookedSeats;
     private FlightStatus status;
     private Double occupancyRate;
 
-    // Info expandida
     private AircraftDto aircraft;
     private RouteDto route;
 }

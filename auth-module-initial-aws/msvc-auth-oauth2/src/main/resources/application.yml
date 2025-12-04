@@ -1,0 +1,10 @@
+logging:
+  level:
+    root: INFO
+    com.example.microservice_search: DEBUG
+
+spring:
+  application:
+    name: msvc-auth-oauth2
+  config:
+    import: optional:configserver:http://localhost:8888

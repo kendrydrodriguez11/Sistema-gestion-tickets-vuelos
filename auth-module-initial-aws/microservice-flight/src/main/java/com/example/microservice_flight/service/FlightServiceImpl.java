@@ -1,9 +1,6 @@
 package com.example.microservice_flight.service;
 
-import com.example.microservice_flight.dto.AircraftDto;
-import com.example.microservice_flight.dto.FlightDto;
-import com.example.microservice_flight.dto.RouteDto;
-import com.example.microservice_flight.dto.SeatDto;
+import com.example.microservice_flight.dto.*;
 import com.example.microservice_flight.model.*;
 import com.example.microservice_flight.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -34,11 +31,27 @@ public class FlightServiceImpl implements FlightService {
     public FlightDto createFlight(FlightDto dto) {
         log.info("Creating flight: {}", dto.getFlightNumber());
 
+        // Verificar si ya existe un vuelo con ese número en fecha similar
+        flightRepository.findByFlightNumber(dto.getFlightNumber())
+                .ifPresent(existing -> {
+                    if (existing.getDepartureTime().toLocalDate().equals(dto.getDepartureTime().toLocalDate())) {
+                        throw new RuntimeException("Flight with this number already exists for this date");
+                    }
+                });
+
         AircraftEntity aircraft = aircraftRepository.findById(dto.getAircraftId())
                 .orElseThrow(() -> new RuntimeException("Aircraft not found"));
 
+        if (aircraft.getStatus() != AircraftStatus.ACTIVE) {
+            throw new RuntimeException("Aircraft is not active");
+        }
+
         RouteEntity route = routeRepository.findById(dto.getRouteId())
                 .orElseThrow(() -> new RuntimeException("Route not found"));
+
+        if (route.getStatus() != RouteStatus.ACTIVE) {
+            throw new RuntimeException("Route is not active");
+        }
 
         FlightEntity flight = FlightEntity.builder()
                 .flightNumber(dto.getFlightNumber())
@@ -57,7 +70,7 @@ public class FlightServiceImpl implements FlightService {
         // Generar asientos automáticamente
         generateSeatsForFlight(saved.getId());
 
-        log.info("Flight created successfully: {}", saved.getId());
+        log.info("Flight created successfully: {} with {} seats", saved.getId(), aircraft.getTotalSeats());
         return mapToDto(saved, true);
     }
 
@@ -68,14 +81,21 @@ public class FlightServiceImpl implements FlightService {
                 .orElseThrow(() -> new RuntimeException("Flight not found"));
 
         if (dto.getDepartureTime() != null) {
+            // No permitir cambiar horario si hay reservas confirmadas
+            if (flight.getBookedSeats() > 0) {
+                throw new RuntimeException("Cannot change departure time for flight with bookings");
+            }
             flight.setDepartureTime(dto.getDepartureTime());
         }
+
         if (dto.getArrivalTime() != null) {
             flight.setArrivalTime(dto.getArrivalTime());
         }
+
         if (dto.getBasePrice() != null) {
             flight.setBasePrice(dto.getBasePrice());
         }
+
         if (dto.getStatus() != null) {
             flight.setStatus(dto.getStatus());
         }
@@ -105,8 +125,10 @@ public class FlightServiceImpl implements FlightService {
         LocalDateTime startDate = date.withHour(0).withMinute(0).withSecond(0);
         LocalDateTime endDate = date.withHour(23).withMinute(59).withSecond(59);
 
-        return flightRepository.searchFlights(origin, destination, startDate, endDate)
-                .stream()
+        List<FlightEntity> flights = flightRepository.searchFlights(origin, destination, startDate, endDate);
+
+        return flights.stream()
+                .filter(f -> f.getAvailableSeats() > 0) // Solo vuelos con asientos disponibles
                 .map(f -> mapToDto(f, true))
                 .collect(Collectors.toList());
     }
@@ -117,61 +139,70 @@ public class FlightServiceImpl implements FlightService {
         FlightEntity flight = flightRepository.findById(flightId)
                 .orElseThrow(() -> new RuntimeException("Flight not found"));
 
+        // Verificar si ya tiene asientos
+        if (!seatRepository.findByFlightId(flightId).isEmpty()) {
+            log.warn("Flight {} already has seats generated", flightId);
+            return;
+        }
+
         AircraftEntity aircraft = flight.getAircraft();
         List<SeatEntity> seats = new ArrayList<>();
 
-        // Generar asientos Economy
-        int economyRows = (int) Math.ceil(aircraft.getEconomySeats() / 6.0);
-        char[] columns = {'A', 'B', 'C', 'D', 'E', 'F'};
+        // Generar asientos First Class
+        int firstClassSeats = aircraft.getFirstClassSeats();
+        if (firstClassSeats > 0) {
+            char[] firstColumns = {'A', 'B', 'C', 'D'};
+            int firstRows = (int) Math.ceil(firstClassSeats / 4.0);
 
-        for (int row = 1; row <= economyRows; row++) {
-            for (char col : columns) {
-                if (seats.size() >= aircraft.getEconomySeats()) break;
-                seats.add(SeatEntity.builder()
-                        .flight(flight)
-                        .seatNumber(row + String.valueOf(col))
-                        .seatClass(SeatClass.ECONOMY)
-                        .status(SeatStatus.AVAILABLE)
-                        .build());
+            for (int row = 1; row <= firstRows && seats.size() < firstClassSeats; row++) {
+                for (char col : firstColumns) {
+                    if (seats.size() >= firstClassSeats) break;
+                    seats.add(createSeat(flight, row + String.valueOf(col), SeatClass.FIRST_CLASS));
+                }
             }
         }
 
         // Generar asientos Business
-        int businessRows = (int) Math.ceil(aircraft.getBusinessSeats() / 4.0);
-        char[] businessColumns = {'A', 'B', 'C', 'D'};
-        int startRow = economyRows + 1;
+        int businessSeats = aircraft.getBusinessSeats();
+        if (businessSeats > 0) {
+            char[] businessColumns = {'A', 'B', 'C', 'D', 'E', 'F'};
+            int startRow = (int) Math.ceil(firstClassSeats / 4.0) + 1;
+            int businessRows = (int) Math.ceil(businessSeats / 6.0);
 
-        for (int row = startRow; row < startRow + businessRows; row++) {
-            for (char col : businessColumns) {
-                if (seats.size() >= aircraft.getEconomySeats() + aircraft.getBusinessSeats()) break;
-                seats.add(SeatEntity.builder()
-                        .flight(flight)
-                        .seatNumber(row + String.valueOf(col))
-                        .seatClass(SeatClass.BUSINESS)
-                        .status(SeatStatus.AVAILABLE)
-                        .build());
+            for (int row = startRow; row < startRow + businessRows && (seats.size() - firstClassSeats) < businessSeats; row++) {
+                for (char col : businessColumns) {
+                    if ((seats.size() - firstClassSeats) >= businessSeats) break;
+                    seats.add(createSeat(flight, row + String.valueOf(col), SeatClass.BUSINESS));
+                }
             }
         }
 
-        // Generar asientos First Class
-        int firstClassRows = (int) Math.ceil(aircraft.getFirstClassSeats() / 2.0);
-        char[] firstColumns = {'A', 'B'};
-        startRow = economyRows + businessRows + 1;
+        // Generar asientos Economy
+        int economySeats = aircraft.getEconomySeats();
+        if (economySeats > 0) {
+            char[] economyColumns = {'A', 'B', 'C', 'D', 'E', 'F'};
+            int startRow = (int) Math.ceil(firstClassSeats / 4.0) + (int) Math.ceil(businessSeats / 6.0) + 1;
+            int economyRows = (int) Math.ceil(economySeats / 6.0);
 
-        for (int row = startRow; row < startRow + firstClassRows; row++) {
-            for (char col : firstColumns) {
-                if (seats.size() >= aircraft.getTotalSeats()) break;
-                seats.add(SeatEntity.builder()
-                        .flight(flight)
-                        .seatNumber(row + String.valueOf(col))
-                        .seatClass(SeatClass.FIRST_CLASS)
-                        .status(SeatStatus.AVAILABLE)
-                        .build());
+            for (int row = startRow; row < startRow + economyRows && (seats.size() - firstClassSeats - businessSeats) < economySeats; row++) {
+                for (char col : economyColumns) {
+                    if ((seats.size() - firstClassSeats - businessSeats) >= economySeats) break;
+                    seats.add(createSeat(flight, row + String.valueOf(col), SeatClass.ECONOMY));
+                }
             }
         }
 
         seatRepository.saveAll(seats);
         log.info("Generated {} seats for flight {}", seats.size(), flightId);
+    }
+
+    private SeatEntity createSeat(FlightEntity flight, String seatNumber, SeatClass seatClass) {
+        return SeatEntity.builder()
+                .flight(flight)
+                .seatNumber(seatNumber)
+                .seatClass(seatClass)
+                .status(SeatStatus.AVAILABLE)
+                .build();
     }
 
     @Override

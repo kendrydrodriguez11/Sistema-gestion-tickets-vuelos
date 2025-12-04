@@ -36,11 +36,51 @@ spring:
           filters:
             - StripPrefix=0
 
-        # Inventory service
-        - id: inventory-service
-          uri: http://localhost:8083
+        # AWS service
+        - id: aws-service
+          uri: http://localhost:8082
           predicates:
-            - Path=/api/inventory/**
+            - Path=/api/aws/**
+          filters:
+            - StripPrefix=0
+
+        # Flight service
+        - id: flight-service
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/flights/**,/api/aircraft/**,/api/routes/**
+          filters:
+            - StripPrefix=0
+
+        # Booking service
+        - id: booking-service
+          uri: http://localhost:8086
+          predicates:
+            - Path=/api/bookings/**
+          filters:
+            - StripPrefix=0
+
+        # Pricing service
+        - id: pricing-service
+          uri: http://localhost:8087
+          predicates:
+            - Path=/api/pricing/**
+          filters:
+            - StripPrefix=0
+
+        # Search service (NUEVO)
+        - id: search-service
+          uri: http://localhost:8088
+          predicates:
+            - Path=/api/search/**
+          filters:
+            - StripPrefix=0
+
+        # Payment service
+        - id: payment-service
+          uri: http://localhost:8089
+          predicates:
+            - Path=/api/payments/**
           filters:
             - StripPrefix=0
 
@@ -49,14 +89,6 @@ spring:
           uri: http://localhost:8084
           predicates:
             - Path=/api/notifications/**
-          filters:
-            - StripPrefix=0
-
-        # AWS service
-        - id: aws-service
-          uri: http://localhost:8082
-          predicates:
-            - Path=/api/aws/**
           filters:
             - StripPrefix=0
 
@@ -76,3 +108,20 @@ eureka:
   client:
     register-with-eureka: true
     fetch-registry: true
+
+
+
+---
+
+## ----------**Orden de arranque**------------
+1. microservice-configuration (puerto 8888)
+2. microservice-eureka (puerto 8761)
+3. microservice-auth (puerto 8081)
+4. microservice-aws (puerto 8082)
+5. microservice-flight (puerto 8085)
+6. microservice-pricing (puerto 8087)
+7. microservice-search (puerto 8088) ← NUEVO
+8. microservice-booking (puerto 8086)
+9. microservice-payment (puerto 8089)
+10. microservice-notifications (puerto 8084)
+11. microservice-gateway (puerto 8080)

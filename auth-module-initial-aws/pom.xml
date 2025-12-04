@@ -21,17 +21,15 @@
             microservice-eureka
         </module>
         <module>
-            microservice-auth
-        </module>
-        <module>
             microservice-aws
         </module>
-        <module>microservice_change</module>
+        <module>msvc-auth-oauth2</module>
         <module>microservice-notifications</module>
         <module>microservice-flight</module>
         <module>microservice-booking</module>
         <module>microservice-pricing</module>
         <module>microservice-search</module>
+        <module>microservice-payment</module>
     </modules>
 
     <properties>
