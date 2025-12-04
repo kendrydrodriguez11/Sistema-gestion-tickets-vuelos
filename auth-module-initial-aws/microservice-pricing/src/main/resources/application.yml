@@ -1,0 +1,10 @@
+logging:
+    level:
+      root: INFO
+      com.example.microservice_pricing: DEBUG
+
+spring:
+    application:
+      name: microservice-pricing
+    config:
+      import: optional:configserver:http://localhost:8888
