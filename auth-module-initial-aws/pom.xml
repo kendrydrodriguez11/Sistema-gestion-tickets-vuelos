@@ -21,11 +21,9 @@
             microservice-eureka
         </module>
         <module>
-            microservice-auth
-        </module>
-        <module>
             microservice-aws
         </module>
+        <module>msvc-auth-oauth2</module>
         <module>microservice-notifications</module>
         <module>microservice-flight</module>
         <module>microservice-booking</module>
