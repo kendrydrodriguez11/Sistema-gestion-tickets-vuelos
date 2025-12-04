@@ -1,6 +1,5 @@
 package com.example.microservice_notifications.config;
 
-
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -8,10 +7,10 @@ import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+
 @Configuration
 public class RabbitMQConfig {
 
-    public static final String LOW_STOCK_QUEUE = "low.stock.queue";
 
     @Bean
     public Jackson2JsonMessageConverter messageConverter() {
