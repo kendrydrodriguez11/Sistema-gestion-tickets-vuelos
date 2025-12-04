@@ -4,7 +4,7 @@ server:
 
 spring:
   application:
-    name: msvc-inventory
+    name: msvc-change
   data:
     redis:
       lettuce:

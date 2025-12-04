@@ -5,7 +5,7 @@ logging:
 
 spring:
   application:
-    name: msvc-inventory
+    name: msvc-change
   config:
     import: optional:configserver:http://localhost:8888
   data:
