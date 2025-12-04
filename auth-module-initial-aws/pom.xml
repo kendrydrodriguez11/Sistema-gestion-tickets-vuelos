@@ -32,6 +32,7 @@
         <module>microservice-booking</module>
         <module>microservice-pricing</module>
         <module>microservice-search</module>
+        <module>microservice-payment</module>
     </modules>
 
     <properties>
