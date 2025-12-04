@@ -19,6 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -205,12 +207,24 @@ public class PaymentServiceImpl implements PaymentService {
                 .build();
 
         try {
-            rabbitTemplate.convertAndSend(PAYMENT_EXCHANGE, PAYMENT_ROUTING_KEY, event);
+            // Convertir a Map para compatibilidad con el listener
+            Map<String, Object> eventMap = new HashMap<>();
+            eventMap.put("eventType", event.getEventType().toString());
+            eventMap.put("paymentId", event.getPaymentId().toString());
+            eventMap.put("bookingId", event.getBookingId().toString());
+            eventMap.put("amount", event.getAmount());
+            eventMap.put("currency", event.getCurrency());
+            eventMap.put("status", event.getStatus().toString());
+            eventMap.put("paypalOrderId", event.getPaypalOrderId());
+            eventMap.put("timestamp", event.getTimestamp().toString());
+
+            rabbitTemplate.convertAndSend(PAYMENT_EXCHANGE, PAYMENT_ROUTING_KEY, eventMap);
             log.info("Published payment event: {} for payment: {}", eventType, payment.getId());
         } catch (Exception e) {
             log.error("Failed to publish payment event: {}", e.getMessage());
         }
     }
+
 
     private PaymentResponseDto mapToDto(PaymentEntity entity) {
         return PaymentResponseDto.builder()

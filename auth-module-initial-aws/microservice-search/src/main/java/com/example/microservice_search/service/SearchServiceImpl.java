@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import com.example.microservice_search.dto.*;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -29,17 +30,15 @@ public class SearchServiceImpl implements SearchService {
     public List<FlightSearchResponseDto> searchFlights(FlightSearchRequestDto request) {
         String cacheKey = buildCacheKey(request);
 
-        // Intentar obtener del cache
         @SuppressWarnings("unchecked")
         List<FlightSearchResponseDto> cached = (List<FlightSearchResponseDto>) redisTemplate.opsForValue().get(cacheKey);
         if (cached != null) {
-            log.info("Cache hit for search: {}", cacheKey);
+            log.info("✅ Cache hit for search: {}", cacheKey);
             return cached;
         }
 
-        log.info("Cache miss for search: {}", cacheKey);
+        log.info("⚠️ Cache miss - Fetching fresh data for: {}", cacheKey);
 
-        // Buscar vuelos
         LocalDateTime searchDateTime = request.getDepartureDate().atStartOfDay();
         List<FlightSearchResultDto> flights = flightClient.searchFlights(
                 request.getOrigin(),
@@ -47,15 +46,14 @@ public class SearchServiceImpl implements SearchService {
                 searchDateTime
         );
 
-        // Enriquecer con precios dinámicos
         List<FlightSearchResponseDto> results = flights.stream()
-                .map(flight -> enrichWithPricing(flight))
+                .map(this::enrichWithPricing)
                 .filter(flight -> flight.getAvailableSeats() >= request.getPassengers())
                 .sorted((a, b) -> a.getCurrentPrice().compareTo(b.getCurrentPrice()))
                 .collect(Collectors.toList());
 
-        // Cachear resultados
         redisTemplate.opsForValue().set(cacheKey, results, CACHE_TTL);
+        log.info("💾 Cached {} flights for key: {}", results.size(), cacheKey);
 
         return results;
     }
@@ -63,7 +61,7 @@ public class SearchServiceImpl implements SearchService {
     @Override
     public void clearCache() {
         redisTemplate.keys("flight:search:*").forEach(key -> redisTemplate.delete(key));
-        log.info("Search cache cleared");
+        log.info("🗑️ Search cache cleared");
     }
 
     private FlightSearchResponseDto enrichWithPricing(FlightSearchResultDto flight) {
@@ -76,8 +74,9 @@ public class SearchServiceImpl implements SearchService {
                     flight.getOccupancyRate(),
                     flight.getDepartureTime()
             );
+            log.debug("💰 Price calculated for flight {}: {}", flight.getFlightNumber(), priceInfo.getCurrentPrice());
         } catch (Exception e) {
-            log.error("Error calculating price for flight {}: {}", flight.getId(), e.getMessage());
+            log.error("❌ Error calculating price for flight {}: {}", flight.getId(), e.getMessage());
         }
 
         return FlightSearchResponseDto.builder()

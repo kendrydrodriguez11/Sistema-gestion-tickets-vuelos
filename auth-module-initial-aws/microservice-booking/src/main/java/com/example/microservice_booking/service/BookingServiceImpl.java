@@ -1,5 +1,7 @@
 package com.example.microservice_booking.service;
 
+import java.util.HashMap;
+import java.util.Map;
 import com.example.microservice_booking.client.FlightClient;
 import com.example.microservice_booking.dto.BookingDto;
 import com.example.microservice_booking.dto.PassengerDto;
@@ -186,9 +188,19 @@ public class BookingServiceImpl implements BookingService {
 
     private void publishBookingEvent(String routingKey, BookingEntity booking) {
         try {
-            rabbitTemplate.convertAndSend("booking.exchange", routingKey, mapToDto(booking));
+            Map<String, Object> event = new HashMap<>();
+            event.put("action", routingKey);
+            event.put("bookingId", booking.getId().toString());
+            event.put("bookingReference", booking.getBookingReference());
+            event.put("flightId", booking.getFlightId().toString());
+            event.put("userId", booking.getUserId().toString());
+            event.put("status", booking.getStatus().toString());
+            event.put("timestamp", LocalDateTime.now().toString());
+
+            rabbitTemplate.convertAndSend("booking.exchange", routingKey, event);
+            log.info("📤 Published booking event: {} for booking: {}", routingKey, booking.getBookingReference());
         } catch (Exception e) {
-            log.error("Failed to publish event: {}", e.getMessage());
+            log.error("❌ Failed to publish event: {}", e.getMessage());
         }
     }
 

@@ -6,6 +6,7 @@ import com.example.microservice_pricing.repository.PriceHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +22,7 @@ import java.util.UUID;
 public class PricingServiceImpl implements PricingService {
 
     private final PriceHistoryRepository priceHistoryRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     @Value("${pricing.calculation.base-multiplier:1.0}")
     private Double baseMultiplier;
@@ -37,6 +39,8 @@ public class PricingServiceImpl implements PricingService {
     @Value("${pricing.calculation.days-before-medium-price:30}")
     private Integer daysBeforeMediumPrice;
 
+    private static final Duration PRICE_CACHE_TTL = Duration.ofMinutes(10);
+
     @Override
     @Transactional
     public FlightPriceDto calculatePrice(
@@ -45,30 +49,44 @@ public class PricingServiceImpl implements PricingService {
             Double occupancyRate,
             LocalDateTime departureTime) {
 
+        String cacheKey = "price:flight:" + flightId;
+        FlightPriceDto cached = (FlightPriceDto) redisTemplate.opsForValue().get(cacheKey);
+
+        if (cached != null) {
+            log.debug("Price cache hit for flight: {}", flightId);
+            return cached;
+        }
+
         log.debug("Calculating price for flight: {}", flightId);
 
         int daysUntilDeparture = (int) Duration.between(LocalDateTime.now(), departureTime).toDays();
 
-        double multiplier = baseMultiplier;
-
-        // Factor por ocupación
-        if (occupancyRate >= occupancyHighThreshold) {
-            multiplier += 0.5; // +50%
-        } else if (occupancyRate >= occupancyMediumThreshold) {
-            multiplier += 0.25; // +25%
+        if (daysUntilDeparture < 0) {
+            log.warn("Flight {} has already departed", flightId);
+            daysUntilDeparture = 0;
         }
 
-        // Factor por tiempo hasta salida
+        double multiplier = baseMultiplier;
+
+        if (occupancyRate >= occupancyHighThreshold) {
+            multiplier += 0.5;
+            log.debug("High occupancy factor applied: {}", occupancyRate);
+        } else if (occupancyRate >= occupancyMediumThreshold) {
+            multiplier += 0.25;
+            log.debug("Medium occupancy factor applied: {}", occupancyRate);
+        }
+
         if (daysUntilDeparture <= daysBeforeHighPrice) {
-            multiplier += 0.4; // +40%
+            multiplier += 0.4;
+            log.debug("Last minute booking factor applied: {} days", daysUntilDeparture);
         } else if (daysUntilDeparture <= daysBeforeMediumPrice) {
-            multiplier += 0.2; // +20%
+            multiplier += 0.2;
+            log.debug("Near departure factor applied: {} days", daysUntilDeparture);
         }
 
         BigDecimal calculatedPrice = basePrice.multiply(BigDecimal.valueOf(multiplier))
                 .setScale(2, RoundingMode.HALF_UP);
 
-        // Guardar en historial
         PriceHistoryEntity history = PriceHistoryEntity.builder()
                 .flightId(flightId)
                 .basePrice(basePrice)
@@ -81,7 +99,7 @@ public class PricingServiceImpl implements PricingService {
 
         String priceLevel = determinePriceLevel(multiplier);
 
-        return FlightPriceDto.builder()
+        FlightPriceDto result = FlightPriceDto.builder()
                 .flightId(flightId)
                 .basePrice(basePrice)
                 .currentPrice(calculatedPrice)
@@ -89,13 +107,18 @@ public class PricingServiceImpl implements PricingService {
                 .daysUntilDeparture(daysUntilDeparture)
                 .priceLevel(priceLevel)
                 .build();
+
+        redisTemplate.opsForValue().set(cacheKey, result, PRICE_CACHE_TTL);
+        log.info("Price calculated and cached for flight {}: {} ({})", flightId, calculatedPrice, priceLevel);
+
+        return result;
     }
 
     @Override
     public void recalculateAllFlightPrices() {
-        log.info("Recalculating all flight prices...");
-        // Implementación que recorre todos los vuelos activos
-        // y llama a calculatePrice para cada uno
+        log.info("Starting recalculation of all flight prices...");
+        redisTemplate.keys("price:flight:*").forEach(key -> redisTemplate.delete(key));
+        log.info("Price cache cleared - prices will be recalculated on next request");
     }
 
     private String determinePriceLevel(double multiplier) {

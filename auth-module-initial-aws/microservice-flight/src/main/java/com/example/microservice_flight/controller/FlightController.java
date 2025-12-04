@@ -76,4 +76,11 @@ public class FlightController {
         flightService.releaseSeat(flightId, seatNumber);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/{id}/with-pricing")
+    public ResponseEntity<FlightDto> getFlightWithDynamicPricing(@PathVariable UUID id) {
+        FlightDto flight = flightService.getFlight(id);
+        return ResponseEntity.ok(flight);
+    }
+
 }
