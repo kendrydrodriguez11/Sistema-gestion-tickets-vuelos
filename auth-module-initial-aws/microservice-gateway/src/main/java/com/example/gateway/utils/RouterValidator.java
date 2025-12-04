@@ -15,7 +15,8 @@ public class RouterValidator {
             "/api/auth/validationToken",
             "/api/aws/create",
             "/api/aws/list",
-            "/api/aws/presigned-url"
+            "/api/aws/presigned-url",
+            "/api/search/flights"
     );
 
     // Prefijos que NO requieren autenticación
@@ -25,21 +26,14 @@ public class RouterValidator {
             "/error"
     );
 
-    /**
-     * Determina si una ruta requiere autenticación
-     * @return true si requiere autenticación, false si es pública
-     */
     public boolean isSecured(ServerHttpRequest request) {
         String path = request.getURI().getPath();
 
-        System.out.println("🔍 Validando ruta: " + path);
-
-        // 1. Verificar endpoints específicos abiertos (comparación exacta)
+        // 1. Verificar endpoints específicos abiertos
         boolean isOpenEndpoint = OPEN_API_ENDPOINTS.stream()
-                .anyMatch(openPath -> path.equals(openPath));
+                .anyMatch(openPath -> path.equals(openPath) || path.startsWith(openPath));
 
         if (isOpenEndpoint) {
-            System.out.println("✅ Ruta abierta (no requiere auth): " + path);
             return false; // NO requiere autenticación
         }
 
@@ -48,12 +42,9 @@ public class RouterValidator {
                 .anyMatch(path::startsWith);
 
         if (isPublicPrefix) {
-            System.out.println("✅ Prefijo público (no requiere auth): " + path);
             return false; // NO requiere autenticación
         }
 
-        // 3. Todo lo demás requiere autenticación
-        System.out.println("🔒 Ruta protegida (requiere auth): " + path);
         return true; // SÍ requiere autenticación
     }
 }
