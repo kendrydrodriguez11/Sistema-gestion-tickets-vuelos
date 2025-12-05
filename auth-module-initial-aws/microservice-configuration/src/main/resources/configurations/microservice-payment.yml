@@ -34,9 +34,8 @@ spring:
 
 paypal:
   mode: sandbox  # sandbox para desarrollo, live para producción
-  client-id: "AQyI4B5Jjyic4yrHAGcdL"
-  client-secret: "AQyI4B5Jjyic4yrHAGcdLPrL9F96zLMOT0IfoxLJHyRdpkCbMtoy_XD8bVIASfpqK0hrdXqHm5lNwM5v"
-
+  client-id:
+  client-secret:
 
   return-url: http://localhost:3000/payment/success
   cancel-url: http://localhost:3000/payment/cancel

@@ -12,30 +12,27 @@ public class RouterValidator {
             "/api/auth/register",
             "/api/auth/login",
             "/api/auth/introspect",
-            "/api/auth/validationToken",
+            "/api/auth/validate",
+            "/api/auth/google/login",
             "/api/aws/create",
             "/api/aws/list",
             "/api/aws/check",
             "/api/aws/presigned-url/put",
             "/api/aws/presigned-url/get",
-            "/api/search/flights",
-            "/.well-known/openid-configuration",
-            "/oauth2/jwks"
+            "/api/search/flights"
     );
 
     private static final List<String> PUBLIC_PREFIXES = List.of(
-            "/ws",
-            "/actuator",
-            "/error",
-            "/oauth2/authorize",
-            "/oauth2/token",
             "/login",
-            "/logout"
+            "/oauth2",
+            "/actuator",
+            "/error"
     );
 
     public boolean isSecured(ServerHttpRequest request) {
         String path = request.getURI().getPath();
 
+        // Check exact matches
         boolean isOpenEndpoint = OPEN_API_ENDPOINTS.stream()
                 .anyMatch(openPath -> path.equals(openPath) || path.startsWith(openPath));
 
@@ -43,13 +40,10 @@ public class RouterValidator {
             return false;
         }
 
+        // Check prefix matches
         boolean isPublicPrefix = PUBLIC_PREFIXES.stream()
                 .anyMatch(path::startsWith);
 
-        if (isPublicPrefix) {
-            return false;
-        }
-
-        return true;
+        return !isPublicPrefix;
     }
 }

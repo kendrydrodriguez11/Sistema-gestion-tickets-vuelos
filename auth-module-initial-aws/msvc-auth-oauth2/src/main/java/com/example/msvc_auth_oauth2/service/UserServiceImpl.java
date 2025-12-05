@@ -77,7 +77,7 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public UserDto getUserById(UUID id) {
         UserEntity user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
         return mapToDto(user);
     }
 
@@ -85,7 +85,15 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public UserDto getUserByUsername(String username) {
         UserEntity user = userRepository.findByUsernameWithRoles(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found with username: " + username));
+        return mapToDto(user);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserDto getUserByEmail(String email) {
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
         return mapToDto(user);
     }
 
@@ -135,6 +143,8 @@ public class UserServiceImpl implements UserService {
 
         user.setLastLogin(LocalDateTime.now());
         userRepository.save(user);
+
+        log.debug("Last login updated for user: {}", username);
     }
 
     private UserDto mapToDto(UserEntity entity) {

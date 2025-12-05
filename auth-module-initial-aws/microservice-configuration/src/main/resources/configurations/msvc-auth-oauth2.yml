@@ -25,22 +25,56 @@ spring:
       host: localhost
       port: 6380
 
+  # Configuración OAuth2 Client (Google)
   security:
     oauth2:
-      authorization:
-        server:
-          issuer: http://localhost:8081
+      client:
+        registration:
+          google:
+            client-id:
+            client-secret:
+            scope:
+              - openid
+              - profile
+              - email
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            authorization-grant-type: authorization_code
+            client-name: Google
+
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+            user-name-attribute: sub
+            jwk-set-uri: https://www.googleapis.com/oauth2/v3/certs
+
+      # Resource Server (para validar tokens)
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8081
+          issuer-uri: ${AUTH0_ISSUER_URI:https://tu-dominio.auth0.com/}
+          jwk-set-uri: ${AUTH0_JWK_SET_URI:https://tu-dominio.auth0.com/.well-known/jwks.json}
 
+# Configuración Auth0
+auth0:
+  domain: ${AUTH0_DOMAIN:tu-dominio.auth0.com}
+  clientId: ${AUTH0_CLIENT_ID:tu-auth0-client-id}
+  clientSecret: ${AUTH0_CLIENT_SECRET:tu-auth0-client-secret}
+  audience: ${AUTH0_AUDIENCE:https://tu-api.com}
+  issuer: ${AUTH0_ISSUER_URI:https://tu-dominio.auth0.com/}
+
+# Configuración JWT personalizada
 jwt:
-  key:
-    alias: jwt-key
-    store:
-      location: classpath:keystore.jks
-      password: mypass123
-    password: mypass123
+  secret: ${JWT_SECRET:mi-super-secreto-muy-largo-para-jwt-tokens-2024}
+  expiration: 3600000 # 1 hora en milisegundos
+
+# Frontend URL
+app:
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:3000}
+  allowed-origins:
+    - http://localhost:3000
+    - http://localhost:3001
 
 eureka:
   client:
@@ -69,3 +103,33 @@ management:
     export:
       prometheus:
         enabled: true
+
+# 📝 INSTRUCCIONES DE CONFIGURACIÓN:
+#
+# 1. Google OAuth:
+#    - Ve a https://console.cloud.google.com
+#    - Crea un nuevo proyecto o selecciona uno existente
+#    - Habilita "Google+ API"
+#    - Ve a "Credenciales" > "Crear credenciales" > "ID de cliente OAuth 2.0"
+#    - Tipo de aplicación: "Aplicación web"
+#    - URIs de redireccionamiento autorizados: http://localhost:8081/login/oauth2/code/google
+#    - Copia el Client ID y Client Secret
+#
+# 2. Auth0:
+#    - Ve a https://auth0.com y crea una cuenta
+#    - Crea una nueva "Application" (tipo: Regular Web Application)
+#    - Ve a Settings y copia: Domain, Client ID, Client Secret
+#    - En "Allowed Callback URLs" agrega: http://localhost:8081/callback
+#    - En "Allowed Logout URLs" agrega: http://localhost:3000
+#    - En "Allowed Web Origins" agrega: http://localhost:3000
+#    - Habilita "Google" en "Connections" > "Social"
+#
+# 3. Variables de entorno (crea un archivo .env o configura en tu IDE):
+#    export GOOGLE_CLIENT_ID="tu-google-client-id"
+#    export GOOGLE_CLIENT_SECRET="tu-google-client-secret"
+#    export AUTH0_DOMAIN="tu-dominio.auth0.com"
+#    export AUTH0_CLIENT_ID="tu-auth0-client-id"
+#    export AUTH0_CLIENT_SECRET="tu-auth0-client-secret"
+#    export AUTH0_AUDIENCE="https://tu-api.com"
+#    export AUTH0_ISSUER_URI="https://tu-dominio.auth0.com/"
+#    export AUTH0_JWK_SET_URI="https://tu-dominio.auth0.com/.well-known/jwks.json"

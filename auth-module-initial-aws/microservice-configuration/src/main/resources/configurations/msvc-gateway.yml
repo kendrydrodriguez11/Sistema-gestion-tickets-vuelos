@@ -28,7 +28,23 @@ spring:
             maxAge: 3600
 
       routes:
-        # Auth service
+        # Auth service - OAuth2 routes
+        - id: auth-oauth2-authorization
+          uri: http://localhost:8081
+          predicates:
+            - Path=/oauth2/**
+          filters:
+            - StripPrefix=0
+
+        # Auth service - Login routes
+        - id: auth-login
+          uri: http://localhost:8081
+          predicates:
+            - Path=/login/**
+          filters:
+            - StripPrefix=0
+
+        # Auth service - API routes
         - id: auth-service
           uri: http://localhost:8081
           predicates:
@@ -68,7 +84,7 @@ spring:
           filters:
             - StripPrefix=0
 
-        # Search service (NUEVO)
+        # Search service
         - id: search-service
           uri: http://localhost:8088
           predicates:
@@ -92,14 +108,6 @@ spring:
           filters:
             - StripPrefix=0
 
-        # WebSocket
-        - id: websocket-service
-          uri: lb://msvc-auth
-          predicates:
-            - Path=/ws/**
-          filters:
-            - StripPrefix=0
-
 security:
   service:
     url: http://localhost:8081/api/auth
@@ -108,8 +116,8 @@ eureka:
   client:
     register-with-eureka: true
     fetch-registry: true
-
-# 🔥 AGREGAR ESTO A TODOS LOS application.yml de cada microservicio
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
 
 management:
   endpoints:
@@ -131,18 +139,3 @@ management:
     export:
       prometheus:
         enabled: true
-
----
-
-## ----------**Orden de arranque**------------
-1. microservice-configuration (puerto 8888)
-2. microservice-eureka (puerto 8761)
-3. microservice-auth (puerto 8081)
-4. microservice-aws (puerto 8082)
-5. microservice-flight (puerto 8085)
-6. microservice-pricing (puerto 8087)
-7. microservice-search (puerto 8088) ← NUEVO
-8. microservice-booking (puerto 8086)
-9. microservice-payment (puerto 8089)
-10. microservice-notifications (puerto 8084)
-11. microservice-gateway (puerto 8080)
