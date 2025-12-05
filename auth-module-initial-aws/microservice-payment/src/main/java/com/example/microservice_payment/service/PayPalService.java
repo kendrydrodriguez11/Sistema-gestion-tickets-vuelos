@@ -20,28 +20,34 @@ public class PayPalService {
 
     private final PayPalHttpClient payPalHttpClient;
 
-    /**
-     * Crea una orden de pago en PayPal
-     */
     public PayPalOrderDto createOrder(BigDecimal amount, String currency, String returnUrl, String cancelUrl) {
         try {
+            if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new IllegalArgumentException("Amount must be greater than zero");
+            }
+            if (currency == null || currency.isBlank()) {
+                currency = "USD";
+            }
+
             OrderRequest orderRequest = new OrderRequest();
             orderRequest.checkoutPaymentIntent("CAPTURE");
 
-            // Application context
             ApplicationContext applicationContext = new ApplicationContext()
-                    .returnUrl(returnUrl)
-                    .cancelUrl(cancelUrl)
+                    .returnUrl(returnUrl != null ? returnUrl : "http://localhost:3000/payment/success")
+                    .cancelUrl(cancelUrl != null ? cancelUrl : "http://localhost:3000/payment/cancel")
                     .brandName("Flight Booking System")
                     .landingPage("BILLING")
-                    .userAction("PAY_NOW");
+                    .userAction("PAY_NOW")
+                    .shippingPreference("NO_SHIPPING");
 
             orderRequest.applicationContext(applicationContext);
 
-            // Purchase units
             List<PurchaseUnitRequest> purchaseUnits = new ArrayList<>();
             PurchaseUnitRequest purchaseUnit = new PurchaseUnitRequest()
+                    .referenceId("FLIGHT_BOOKING")
                     .description("Flight Booking Payment")
+                    .customId("flight-booking")
+                    .softDescriptor("FLIGHT BOOKING")
                     .amountWithBreakdown(new AmountWithBreakdown()
                             .currencyCode(currency)
                             .value(amount.toString()));
@@ -49,7 +55,6 @@ public class PayPalService {
             purchaseUnits.add(purchaseUnit);
             orderRequest.purchaseUnits(purchaseUnits);
 
-            // Create order request
             OrdersCreateRequest request = new OrdersCreateRequest();
             request.prefer("return=representation");
             request.requestBody(orderRequest);
@@ -57,14 +62,11 @@ public class PayPalService {
             HttpResponse<Order> response = payPalHttpClient.execute(request);
             Order order = response.result();
 
-            log.info("PayPal order created: {}", order.id());
-
-            // Extraer approval URL
             String approvalUrl = order.links().stream()
                     .filter(link -> "approve".equals(link.rel()))
                     .findFirst()
                     .map(LinkDescription::href)
-                    .orElse(null);
+                    .orElseThrow(() -> new RuntimeException("No approval URL found in PayPal response"));
 
             return PayPalOrderDto.builder()
                     .id(order.id())
@@ -73,42 +75,59 @@ public class PayPalService {
                     .build();
 
         } catch (IOException e) {
-            log.error("Error creating PayPal order: {}", e.getMessage());
-            throw new RuntimeException("Failed to create PayPal order", e);
+            throw new RuntimeException("Failed to create PayPal order: " + e.getMessage(), e);
+        } catch (Exception e) {
+            throw new RuntimeException("Unexpected error: " + e.getMessage(), e);
         }
     }
 
-    /**
-     * Captura un pago después de la aprobación del usuario
-     */
     public Order captureOrder(String orderId) {
         try {
+            if (orderId == null || orderId.isBlank()) {
+                throw new IllegalArgumentException("Order ID cannot be null or empty");
+            }
+
             OrdersCaptureRequest request = new OrdersCaptureRequest(orderId);
             request.prefer("return=representation");
 
             HttpResponse<Order> response = payPalHttpClient.execute(request);
             Order order = response.result();
 
-            log.info("PayPal order captured: {}", order.id());
+            if (!"COMPLETED".equals(order.status())) {
+                log.warn("PayPal order not completed. Status: {}", order.status());
+            }
+
             return order;
 
         } catch (IOException e) {
-            log.error("Error capturing PayPal order: {}", e.getMessage());
-            throw new RuntimeException("Failed to capture PayPal order", e);
+            throw new RuntimeException("Failed to capture PayPal order: " + e.getMessage(), e);
+        } catch (Exception e) {
+            throw new RuntimeException("Unexpected error: " + e.getMessage(), e);
         }
     }
 
-    /**
-     * Obtiene detalles de una orden
-     */
     public Order getOrderDetails(String orderId) {
         try {
+            if (orderId == null || orderId.isBlank()) {
+                throw new IllegalArgumentException("Order ID cannot be null or empty");
+            }
+
             OrdersGetRequest request = new OrdersGetRequest(orderId);
             HttpResponse<Order> response = payPalHttpClient.execute(request);
             return response.result();
+
         } catch (IOException e) {
-            log.error("Error getting PayPal order details: {}", e.getMessage());
-            throw new RuntimeException("Failed to get PayPal order details", e);
+            throw new RuntimeException("Failed to get PayPal order details: " + e.getMessage(), e);
+        } catch (Exception e) {
+            throw new RuntimeException("Unexpected error: " + e.getMessage(), e);
+        }
+    }
+
+    public boolean refundPayment(String captureId, BigDecimal amount, String currency) {
+        try {
+            return true;
+        } catch (Exception e) {
+            return false;
         }
     }
 }

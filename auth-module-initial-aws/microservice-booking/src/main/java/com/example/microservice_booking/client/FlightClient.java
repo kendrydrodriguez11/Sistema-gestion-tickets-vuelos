@@ -7,7 +7,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.UUID;
 
-@FeignClient(name = "microservice-flight", url = "http://localhost:8085")
+@FeignClient(
+        name = "microservice-flight",
+        configuration = com.example.microservice_booking.config.FeignConfig.class
+)
+
 public interface FlightClient {
 
     @PostMapping("/api/flights/{flightId}/seats/{seatNumber}/reserve")

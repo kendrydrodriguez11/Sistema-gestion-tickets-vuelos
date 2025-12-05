@@ -139,7 +139,6 @@ public class FlightServiceImpl implements FlightService {
         FlightEntity flight = flightRepository.findById(flightId)
                 .orElseThrow(() -> new RuntimeException("Flight not found"));
 
-        // Verificar si ya tiene asientos
         if (!seatRepository.findByFlightId(flightId).isEmpty()) {
             log.warn("Flight {} already has seats generated", flightId);
             return;
@@ -148,8 +147,10 @@ public class FlightServiceImpl implements FlightService {
         AircraftEntity aircraft = flight.getAircraft();
         List<SeatEntity> seats = new ArrayList<>();
 
-        // Generar asientos First Class
-        int firstClassSeats = aircraft.getFirstClassSeats();
+        int firstClassSeats = aircraft.getFirstClassSeats() != null ? aircraft.getFirstClassSeats() : 0;
+        int businessSeats = aircraft.getBusinessSeats() != null ? aircraft.getBusinessSeats() : 0;
+        int economySeats = aircraft.getEconomySeats() != null ? aircraft.getEconomySeats() : 0;
+
         if (firstClassSeats > 0) {
             char[] firstColumns = {'A', 'B', 'C', 'D'};
             int firstRows = (int) Math.ceil(firstClassSeats / 4.0);
@@ -162,8 +163,6 @@ public class FlightServiceImpl implements FlightService {
             }
         }
 
-        // Generar asientos Business
-        int businessSeats = aircraft.getBusinessSeats();
         if (businessSeats > 0) {
             char[] businessColumns = {'A', 'B', 'C', 'D', 'E', 'F'};
             int startRow = (int) Math.ceil(firstClassSeats / 4.0) + 1;
@@ -177,8 +176,6 @@ public class FlightServiceImpl implements FlightService {
             }
         }
 
-        // Generar asientos Economy
-        int economySeats = aircraft.getEconomySeats();
         if (economySeats > 0) {
             char[] economyColumns = {'A', 'B', 'C', 'D', 'E', 'F'};
             int startRow = (int) Math.ceil(firstClassSeats / 4.0) + (int) Math.ceil(businessSeats / 6.0) + 1;
@@ -192,9 +189,14 @@ public class FlightServiceImpl implements FlightService {
             }
         }
 
+        if (seats.isEmpty()) {
+            throw new RuntimeException("No seats were generated for flight " + flightId);
+        }
+
         seatRepository.saveAll(seats);
         log.info("Generated {} seats for flight {}", seats.size(), flightId);
     }
+
 
     private SeatEntity createSeat(FlightEntity flight, String seatNumber, SeatClass seatClass) {
         return SeatEntity.builder()

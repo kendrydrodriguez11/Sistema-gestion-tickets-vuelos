@@ -8,43 +8,48 @@ import java.util.List;
 @Component
 public class RouterValidator {
 
-    // Endpoints que NO requieren autenticación
     private static final List<String> OPEN_API_ENDPOINTS = List.of(
             "/api/auth/register",
             "/api/auth/login",
+            "/api/auth/introspect",
             "/api/auth/validationToken",
             "/api/aws/create",
             "/api/aws/list",
-            "/api/aws/presigned-url",
-            "/api/search/flights"
+            "/api/aws/check",
+            "/api/aws/presigned-url/put",
+            "/api/aws/presigned-url/get",
+            "/api/search/flights",
+            "/.well-known/openid-configuration",
+            "/oauth2/jwks"
     );
 
-    // Prefijos que NO requieren autenticación
     private static final List<String> PUBLIC_PREFIXES = List.of(
             "/ws",
             "/actuator",
-            "/error"
+            "/error",
+            "/oauth2/authorize",
+            "/oauth2/token",
+            "/login",
+            "/logout"
     );
 
     public boolean isSecured(ServerHttpRequest request) {
         String path = request.getURI().getPath();
 
-        // 1. Verificar endpoints específicos abiertos
         boolean isOpenEndpoint = OPEN_API_ENDPOINTS.stream()
                 .anyMatch(openPath -> path.equals(openPath) || path.startsWith(openPath));
 
         if (isOpenEndpoint) {
-            return false; // NO requiere autenticación
+            return false;
         }
 
-        // 2. Verificar prefijos públicos
         boolean isPublicPrefix = PUBLIC_PREFIXES.stream()
                 .anyMatch(path::startsWith);
 
         if (isPublicPrefix) {
-            return false; // NO requiere autenticación
+            return false;
         }
 
-        return true; // SÍ requiere autenticación
+        return true;
     }
 }

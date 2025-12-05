@@ -9,7 +9,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@FeignClient(name = "microservice-flight", url = "http://localhost:8085")
+@FeignClient(
+        name = "microservice-flight",
+        url = "http://localhost:8085",
+        configuration = com.example.microservice_search.config.FeignConfig.class // seguridad agregada
+)
 public interface FlightClient {
 
     @GetMapping("/api/flights/search")

@@ -28,44 +28,44 @@ public class AuthenticationFilter implements GlobalFilter {
         String path = request.getURI().getPath();
         String method = request.getMethod().toString();
 
-        log.info("🌐 Gateway Request: {} {}", method, path);
+        log.info("Gateway Request: {} {}", method, path);
 
-        // Verificar si la ruta está protegida
         if (!routerValidator.isSecured(request)) {
-            log.info("✅ Ruta pública - Sin validación de token: {}", path);
+            log.info("Ruta pública - Sin validación de token: {}", path);
             return chain.filter(exchange);
         }
 
-        // Ruta protegida - Validar token
-        log.info("🔒 Ruta protegida - Validando token: {}", path);
+        log.info("Ruta protegida - Validando token: {}", path);
 
         String authHeader = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
         if (authHeader == null) {
-            log.warn("❌ Header Authorization faltante para: {}", path);
+            log.warn("Header Authorization faltante para: {}", path);
             return onError(exchange, "Token de autenticación faltante", HttpStatus.UNAUTHORIZED);
         }
 
         if (!authHeader.toLowerCase().startsWith("bearer ")) {
-            log.warn("❌ Token mal formado (no inicia con 'Bearer') para: {}", path);
+            log.warn("Token mal formado (no inicia con 'Bearer') para: {}", path);
             return onError(exchange, "Formato de token inválido", HttpStatus.UNAUTHORIZED);
         }
 
         String cleanToken = authHeader.substring(7);
-        log.debug("🔑 Validando token para: {}", path);
+        log.debug("Validando token para: {}", path);
 
         return authWebClient.validateToken(cleanToken)
-                .flatMap(isValid -> {
-                    if (isValid) {
-                        log.info("✅ Token válido - Permitiendo acceso a: {}", path);
+                .flatMap(response -> {
+                    Boolean isActive = (Boolean) response.get("active");
+
+                    if (Boolean.TRUE.equals(isActive)) {
+                        log.info("Token válido - Permitiendo acceso a: {}", path);
                         return chain.filter(exchange);
                     } else {
-                        log.warn("❌ Token inválido para: {}", path);
-                        return onError(exchange, "Token inválido", HttpStatus.UNAUTHORIZED);
+                        log.warn("Token inválido o expirado para: {}", path);
+                        return onError(exchange, "Token inválido o expirado", HttpStatus.UNAUTHORIZED);
                     }
                 })
                 .onErrorResume(e -> {
-                    log.error("❌ Error al validar token para {}: {}", path, e.getMessage());
+                    log.error("Error al validar token para {}: {}", path, e.getMessage());
                     return onError(exchange, "Error en autenticación", HttpStatus.INTERNAL_SERVER_ERROR);
                 });
     }
@@ -74,7 +74,7 @@ public class AuthenticationFilter implements GlobalFilter {
         ServerHttpResponse response = exchange.getResponse();
         response.setStatusCode(status);
 
-        log.error("🚫 Rechazando request: {} - Status: {}",
+        log.error("Rechazando request: {} - Status: {}",
                 exchange.getRequest().getURI().getPath(), status);
 
         return response.setComplete();

@@ -21,11 +21,27 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
+    /**
+     *  Ahora acepta Idempotency-Key en headers
+     */
     @PostMapping
     public ResponseEntity<PaymentResponseDto> initiatePayment(
             @Valid @RequestBody PaymentRequestDto dto,
-            @RequestHeader("X-User-Id") UUID userId) {
-        log.info("Payment initiation request for booking: {}", dto.getBookingId());
+            @RequestHeader("X-User-Id") UUID userId,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
+
+        log.info("Payment initiation request for booking: {} with idempotency key: {}",
+                dto.getBookingId(), idempotencyKey);
+
+        // Si hay idempotency key, validar formato UUID
+        if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+            try {
+                UUID.fromString(idempotencyKey);
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().build();
+            }
+        }
+
         return ResponseEntity.ok(paymentService.initiatePayment(dto, userId));
     }
 
@@ -57,5 +73,16 @@ public class PaymentController {
     public ResponseEntity<Void> cancelPayment(@PathVariable UUID paymentId) {
         paymentService.cancelPayment(paymentId);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Endpoint para refunds
+     */
+    @PostMapping("/{paymentId}/refund")
+    public ResponseEntity<PaymentResponseDto> refundPayment(
+            @PathVariable UUID paymentId,
+            @RequestParam(required = false) String reason) {
+        log.info("Refund request for payment: {} - Reason: {}", paymentId, reason);
+        return ResponseEntity.ok().build();
     }
 }
