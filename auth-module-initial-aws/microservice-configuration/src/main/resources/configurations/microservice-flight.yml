@@ -1,0 +1,54 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: microservice-flight
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # URL del JWK Set del Authorization Server
+          jwk-set-uri: http://localhost:8081/oauth2/jwks
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/flight_db
+    username: root
+    password: ken123
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+      database: mysql
+      database-platform: org.hibernate.dialect.MySQL8Dialect
+    show-sql: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+# 🔥 AGREGAR ESTO A TODOS LOS application.yml de cada microservicio
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true

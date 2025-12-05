@@ -1,0 +1,13 @@
+logging:
+  level:
+    root: INFO
+    com.example.microservice_notifications: DEBUG
+
+server:
+  port: 8084
+
+spring:
+  application:
+    name: msvc-notifications
+  config:
+    import: optional:configserver:http://localhost:8888

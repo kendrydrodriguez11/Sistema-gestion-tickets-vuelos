@@ -1,0 +1,81 @@
+server:
+  port: 8089
+
+spring:
+  application:
+    name: microservice-payment
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # URL del JWK Set del Authorization Server
+          jwk-set-uri: http://localhost:8081/oauth2/jwks
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/payment_db
+
+    username: root
+    password: ken123
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+      database: mysql
+      database-platform: org.hibernate.dialect.MySQL8Dialect
+    show-sql: true
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+paypal:
+  mode: sandbox  # sandbox para desarrollo, live para producción
+  client-id: "AQyI4B5Jjyic4yrHAGcdL"
+  client-secret: "AQyI4B5Jjyic4yrHAGcdLPrL9F96zLMOT0IfoxLJHyRdpkCbMtoy_XD8bVIASfpqK0hrdXqHm5lNwM5v"
+
+
+  return-url: http://localhost:3000/payment/success
+  cancel-url: http://localhost:3000/payment/cancel
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+
+# 🔥 AGREGAR ESTO A TODOS LOS application.yml de cada microservicio
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# 📝 INSTRUCCIONES PARA OBTENER CREDENCIALES:
+# 1. Ir a https://developer.paypal.com/
+# 2. Crear cuenta de desarrollador
+# 3. Ir a Dashboard > My Apps & Credentials
+# 4. Crear nueva app en Sandbox
+# 5. Copiar Client ID y Secret
+# 6. Configurar variables de entorno:
+#    export PAYPAL_CLIENT_ID=tu_client_id_real
+#    export PAYPAL_CLIENT_SECRET=tu_secret_real

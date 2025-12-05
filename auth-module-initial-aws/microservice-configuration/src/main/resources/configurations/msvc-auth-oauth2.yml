@@ -1,0 +1,71 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: msvc-auth-oauth2
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/auth_oauth2_db
+    username: root
+    password: ken123
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+      database-platform: org.hibernate.dialect.MySQL8Dialect
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  data:
+    redis:
+      host: localhost
+      port: 6380
+
+  security:
+    oauth2:
+      authorization:
+        server:
+          issuer: http://localhost:8081
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8081
+
+jwt:
+  key:
+    alias: jwt-key
+    store:
+      location: classpath:keystore.jks
+      password: mypass123
+    password: mypass123
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
