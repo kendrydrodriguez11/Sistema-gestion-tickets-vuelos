@@ -14,9 +14,9 @@ spring:
 
   aws:
     secret:
-      key: 
+      key: cvqW3yBpi3BUxqRYA+LJQlo4xG8azouE7CtCbJU5
     access:
-      key:
+      key: AKIAR7LK6KJWZ3BO7GOO
     region: us-east-1
 
 eureka:

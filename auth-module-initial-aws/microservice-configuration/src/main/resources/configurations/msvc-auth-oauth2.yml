@@ -25,23 +25,24 @@ spring:
       host: localhost
       port: 6380
 
-  # Resource Server (para validar tokens de Auth0)
   security:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${AUTH0_ISSUER_URI:https://tu-dominio.auth0.com/}
-          jwk-set-uri: ${AUTH0_JWK_SET_URI:https://tu-dominio.auth0.com/.well-known/jwks.json}
+          issuer-uri: https://dev-chzcisisthlmydkb.us.auth0.com/
+          jwk-set-uri: https://dev-chzcisisthlmydkb.us.auth0.com/.well-known/jwks.json
 
-# Configuración Auth0
 auth0:
-  domain: ${AUTH0_DOMAIN:tu-dominio.auth0.com}
-  audience: ${AUTH0_AUDIENCE:https://tu-api.com}
+  domain: dev-chzcisisthlmydkb.us.auth0.com
+  audience: https://api.miapp.com
 
-# Frontend URL
+  # 🔥 Solo para pruebas (NO usar en producción)
+  client-id: zaSgoGFBnnNkvlUbNJv9qMrADRJn4wbp
+  client-secret: Gr95txgUIxdbs4EZDfEQRKqtf6oYcvsAI-gj42Ufu2zOb-4fxiQO5zJqjQuIUzmD
+
 app:
   frontend:
-    url: ${FRONTEND_URL:http://localhost:3000}
+    url: http://localhost:3000
   allowed-origins:
     - http://localhost:3000
     - http://localhost:3001
@@ -73,23 +74,3 @@ management:
     export:
       prometheus:
         enabled: true
-
-# 📝 INSTRUCCIONES DE CONFIGURACIÓN AUTH0:
-#
-# 1. Ve a https://auth0.com y crea una cuenta
-# 2. Crea una nueva "Application" (tipo: Single Page Application)
-# 3. Ve a Settings y copia: Domain
-# 4. En "Allowed Callback URLs" agrega: http://localhost:3000/callback
-# 5. En "Allowed Logout URLs" agrega: http://localhost:3000
-# 6. En "Allowed Web Origins" agrega: http://localhost:3000
-# 7. En "Connections" > "Social" habilita Google
-# 8. Crea un API en Auth0:
-#    - Ve a "Applications" > "APIs" > "Create API"
-#    - Name: Tu API
-#    - Identifier: https://tu-api.com (este es tu AUDIENCE)
-#
-# 9. Variables de entorno:
-#    export AUTH0_DOMAIN="tu-dominio.auth0.com"
-#    export AUTH0_AUDIENCE="https://tu-api.com"
-#    export AUTH0_ISSUER_URI="https://tu-dominio.auth0.com/"
-#    export AUTH0_JWK_SET_URI="https://tu-dominio.auth0.com/.well-known/jwks.json"
