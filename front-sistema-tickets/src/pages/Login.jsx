@@ -66,70 +66,71 @@ export default function Login() {
   }, [location]);
 
   const handleAuthSuccess = async (accessToken, idToken) => {
-    setIsLoading(true);
+  setIsLoading(true);
+  
+  try {
+    console.log('=== Starting Auth Process ===');
+    console.log('Access Token length:', accessToken.length);
     
-    try {
-      console.log('=== Starting Auth Process ===');
+    // 1. PRIMERO: Guardar token en localStorage DIRECTAMENTE
+    localStorage.setItem('accessToken', accessToken);
+    console.log('Token saved to localStorage');
+    
+    // 2. Verificar que se guardó correctamente
+    const savedToken = localStorage.getItem('accessToken');
+    if (!savedToken) {
+      throw new Error('Failed to save token to localStorage');
+    }
+    console.log('Token verified in localStorage:', savedToken.substring(0, 50) + '...');
+    
+    // 3. LUEGO: Actualizar el store (esto también guarda en localStorage)
+    setTokens(accessToken, null);
+    
+    // 4. Pausa para asegurar que todo esté sincronizado
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    // 5. FINALMENTE: Cargar perfil del usuario
+    console.log('Loading user profile...');
+    await loadUserProfile();
+    
+    toast.success('¡Bienvenido!');
+    
+    // 6. Limpiar URL y redirigir
+    window.location.hash = '';
+    setTimeout(() => {
+      navigate('/search');
+    }, 500);
+    
+  } catch (error) {
+    console.error('=== Auth Error ===');
+    console.error('Error details:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status
+    });
+    
+    let errorMessage = 'Error al autenticar';
+    
+    if (error.response?.status === 401) {
+      errorMessage = 'Token inválido. Verifica la configuración de Auth0.';
       
-      // Guardar token
-      setTokens(accessToken, null);
-      
-      // Verificar guardado
-      const savedToken = localStorage.getItem('accessToken');
-      console.log('Token saved successfully:', !!savedToken);
-      
-      // Pequeña pausa para asegurar que el token esté disponible
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Cargar perfil
-      console.log('Loading user profile...');
-      await loadUserProfile();
-      
-      toast.success('¡Bienvenido de nuevo!');
-      window.location.hash = '';
-      
-      setTimeout(() => {
-        navigate('/search');
-      }, 500);
-      
-    } catch (error) {
-      console.error('=== Auth Error ===');
-      console.error('Error object:', error);
-      console.error('Response status:', error.response?.status);
-      console.error('Response data:', error.response?.data);
-      console.error('Response headers:', error.response?.headers);
-      
-      let errorMessage = 'Error al autenticar';
-      let debugData = {
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message,
-        type: 'backend_error'
+      // Debug info
+      const debugInfo = {
+        tokenExists: !!localStorage.getItem('accessToken'),
+        audience: AUTH0_AUDIENCE,
+        issuer: `https://${AUTH0_DOMAIN}/`,
+        error: error.response?.data
       };
       
-      if (error.response?.status === 401) {
-        errorMessage = 'Token inválido. Verifica la configuración de Auth0.';
-        
-        // Información adicional para debug
-        const tokenInfo = {
-          tokenExists: !!localStorage.getItem('accessToken'),
-          backendExpects: 'JWT de Auth0 con audience correcta',
-          currentAudience: AUTH0_AUDIENCE,
-          issuer: `https://${AUTH0_DOMAIN}/`
-        };
-        
-        debugData = { ...debugData, tokenInfo };
-        console.log('Token Debug Info:', tokenInfo);
-        
-      } else if (error.response?.status === 404) {
-        errorMessage = 'Usuario no encontrado. Creando cuenta...';
-      } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      }
+      console.error('Auth0 Configuration Debug:', debugInfo);
+      setDebugInfo(debugInfo);
       
-      setDebugInfo(debugData);
-      toast.error(errorMessage);
-      localStorage.removeItem('accessToken');
+    } else if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    }
+    
+    toast.error(errorMessage);
+    localStorage.removeItem('accessToken');
       
     } finally {
       setIsLoading(false);

@@ -57,17 +57,42 @@ export const useAuthStore = create(
       },
 
       loadUserProfile: async () => {
-        set({ isLoading: true });
         try {
-          const user = await authApi.getProfile();
-          set({ user, isAuthenticated: true, isLoading: false });
-          return user;
-        } catch (error) {
+          // Verificar que el token existe ANTES de hacer la petición
+          const token = localStorage.getItem('accessToken');
+          
+          if (!token) {
+            console.error('No access token found in localStorage');
+            throw new Error('No access token available');
+          }
+          
+          console.log('Token exists, length:', token.length);
+          console.log('Making request to /api/auth/me...');
+          
+          const userData = await authApi.getProfile();
+          
           set({ 
-            isAuthenticated: false,
-            user: null,
+            user: userData, 
+            isAuthenticated: true,
             isLoading: false 
           });
+          
+          console.log('User profile loaded successfully:', userData);
+          
+          return userData;
+        } catch (error) {
+          console.error('Failed to load user profile:', error);
+          
+          set({ 
+            user: null, 
+            isAuthenticated: false,
+            isLoading: false 
+          });
+          
+          // Limpiar tokens si falla
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          
           throw error;
         }
       },
