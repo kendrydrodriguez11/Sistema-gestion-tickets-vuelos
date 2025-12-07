@@ -30,13 +30,15 @@ public class AuthenticationFilter implements GlobalFilter {
 
         log.info("Gateway Request: {} {}", method, path);
 
+        // Verificar si es ruta pública
         if (!routerValidator.isSecured(request)) {
             log.info("Ruta pública - Sin validación de token: {}", path);
             return chain.filter(exchange);
         }
 
-        log.info("Ruta protegida - Validando token: {}", path);
+        log.info("Ruta protegida - Validando token Auth0: {}", path);
 
+        // Obtener Authorization header
         String authHeader = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
         if (authHeader == null) {
@@ -49,23 +51,36 @@ public class AuthenticationFilter implements GlobalFilter {
             return onError(exchange, "Formato de token inválido", HttpStatus.UNAUTHORIZED);
         }
 
-        String cleanToken = authHeader.substring(7);
-        log.debug("Validando token para: {}", path);
+        // Extraer token (quitar "Bearer ")
+        String token = authHeader.substring(7);
+        log.debug("Validando token Auth0 para: {}", path);
 
-        return authWebClient.validateToken(cleanToken)
+        // Validar token con el servicio de autenticación
+        return authWebClient.validateToken(token)
                 .flatMap(response -> {
                     Boolean isActive = (Boolean) response.get("active");
 
                     if (Boolean.TRUE.equals(isActive)) {
-                        log.info("Token válido - Permitiendo acceso a: {}", path);
+                        log.info("Token Auth0 válido - Permitiendo acceso a: {}", path);
+
+                        // Opcionalmente, agregar información del usuario al header
+                        String username = (String) response.get("username");
+                        if (username != null) {
+                            ServerHttpRequest modifiedRequest = exchange.getRequest()
+                                    .mutate()
+                                    .header("X-User-Email", username)
+                                    .build();
+                            return chain.filter(exchange.mutate().request(modifiedRequest).build());
+                        }
+
                         return chain.filter(exchange);
                     } else {
-                        log.warn("Token inválido o expirado para: {}", path);
+                        log.warn("Token Auth0 inválido o expirado para: {}", path);
                         return onError(exchange, "Token inválido o expirado", HttpStatus.UNAUTHORIZED);
                     }
                 })
                 .onErrorResume(e -> {
-                    log.error("Error al validar token para {}: {}", path, e.getMessage());
+                    log.error("Error al validar token Auth0 para {}: {}", path, e.getMessage());
                     return onError(exchange, "Error en autenticación", HttpStatus.INTERNAL_SERVER_ERROR);
                 });
     }

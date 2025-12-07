@@ -1,7 +1,5 @@
 package com.example.msvc_auth_oauth2.config;
 
-import com.example.msvc_auth_oauth2.service.CustomOAuth2UserService;
-import com.example.msvc_auth_oauth2.service.OAuth2LoginSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -10,8 +8,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.jwt.*;
@@ -29,9 +25,6 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    private final CustomOAuth2UserService customOAuth2UserService;
-    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
-
     @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
     private String issuerUri;
 
@@ -46,12 +39,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         // Endpoints públicos
                         .requestMatchers(
-                                "/api/auth/register",
-                                "/api/auth/login",
                                 "/api/auth/introspect",
-                                "/api/auth/google/**",
-                                "/login/**",
-                                "/oauth2/**",
+                                "/api/auth/validate",
                                 "/error",
                                 "/actuator/health",
                                 "/.well-known/**"
@@ -63,16 +52,6 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
 
-                // OAuth2 Login con Google
-                .oauth2Login(oauth2 -> oauth2
-                        .loginPage("/login")
-                        .userInfoEndpoint(userInfo -> userInfo
-                                .userService(customOAuth2UserService)
-                        )
-                        .successHandler(oAuth2LoginSuccessHandler)
-                        .failureUrl(frontendUrl + "/login?error=true")
-                )
-
                 // Resource Server para validar JWT de Auth0
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.decoder(jwtDecoder()))
@@ -81,12 +60,6 @@ public class SecurityConfig {
                 // Session management
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-
-                // Logout
-                .logout(logout -> logout
-                        .logoutSuccessUrl(frontendUrl)
-                        .permitAll()
                 );
 
         return http.build();
@@ -102,7 +75,6 @@ public class SecurityConfig {
         jwtDecoder.setJwtValidator(withAudience);
         return jwtDecoder;
     }
-
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {

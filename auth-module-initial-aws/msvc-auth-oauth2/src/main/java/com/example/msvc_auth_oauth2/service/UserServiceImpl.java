@@ -1,6 +1,5 @@
 package com.example.msvc_auth_oauth2.service;
 
-import com.example.msvc_auth_oauth2.dto.RegisterDto;
 import com.example.msvc_auth_oauth2.dto.UserDto;
 import com.example.msvc_auth_oauth2.model.RoleEntity;
 import com.example.msvc_auth_oauth2.model.UserEntity;
@@ -27,51 +26,6 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
-
-    @Override
-    @Transactional
-    public UserDto registerUser(RegisterDto registerDto) {
-        log.info("Registering new user: {}", registerDto.getUsername());
-
-        if (userRepository.existsByUsername(registerDto.getUsername())) {
-            throw new IllegalArgumentException("Username already exists");
-        }
-
-        if (userRepository.existsByEmail(registerDto.getEmail())) {
-            throw new IllegalArgumentException("Email already exists");
-        }
-
-        // Obtener o crear rol USER
-        RoleEntity userRole = roleRepository.findByName(UserRole.ROLE_USER)
-                .orElseGet(() -> {
-                    RoleEntity role = RoleEntity.builder()
-                            .name(UserRole.ROLE_USER)
-                            .description("Default user role")
-                            .build();
-                    return roleRepository.save(role);
-                });
-
-        UserEntity user = UserEntity.builder()
-                .username(registerDto.getUsername())
-                .email(registerDto.getEmail())
-                .password(passwordEncoder.encode(registerDto.getPassword()))
-                .firstName(registerDto.getFirstName())
-                .lastName(registerDto.getLastName())
-                .phone(registerDto.getPhone())
-                .enabled(true)
-                .accountNonExpired(true)
-                .accountNonLocked(true)
-                .credentialsNonExpired(true)
-                .roles(new HashSet<>())
-                .build();
-
-        user.addRole(userRole);
-
-        UserEntity savedUser = userRepository.save(user);
-        log.info("User registered successfully: {}", savedUser.getId());
-
-        return mapToDto(savedUser);
-    }
 
     @Override
     @Transactional(readOnly = true)
@@ -145,6 +99,87 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
 
         log.debug("Last login updated for user: {}", username);
+    }
+
+    @Override
+    @Transactional
+    public void updateLastLoginByEmail(String email) {
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setLastLogin(LocalDateTime.now());
+        userRepository.save(user);
+
+        log.debug("Last login updated for email: {}", email);
+    }
+
+    @Override
+    @Transactional
+    public UserDto createUserFromAuth0(String email, String name, String picture) {
+        log.info("Creating new user from Auth0: {}", email);
+
+        // Verificar si ya existe
+        if (userRepository.existsByEmail(email)) {
+            throw new IllegalArgumentException("User already exists with email: " + email);
+        }
+
+        // Obtener o crear rol USER
+        RoleEntity userRole = roleRepository.findByName(UserRole.ROLE_USER)
+                .orElseGet(() -> {
+                    RoleEntity role = RoleEntity.builder()
+                            .name(UserRole.ROLE_USER)
+                            .description("Default user role")
+                            .build();
+                    return roleRepository.save(role);
+                });
+
+        // Generar username único a partir del email
+        String username = generateUniqueUsername(email);
+
+        // Parsear nombre
+        String firstName = null;
+        String lastName = null;
+        if (name != null && !name.isEmpty()) {
+            String[] nameParts = name.split(" ", 2);
+            firstName = nameParts[0];
+            if (nameParts.length > 1) {
+                lastName = nameParts[1];
+            }
+        }
+
+        UserEntity newUser = UserEntity.builder()
+                .username(username)
+                .email(email)
+                .password(passwordEncoder.encode(UUID.randomUUID().toString())) // Password random
+                .firstName(firstName)
+                .lastName(lastName)
+                .enabled(true)
+                .accountNonExpired(true)
+                .accountNonLocked(true)
+                .credentialsNonExpired(true)
+                .roles(new HashSet<>())
+                .lastLogin(LocalDateTime.now())
+                .build();
+
+        newUser.addRole(userRole);
+
+        UserEntity savedUser = userRepository.save(newUser);
+        log.info("New user created successfully from Auth0: {}", savedUser.getUsername());
+
+        return mapToDto(savedUser);
+    }
+
+    private String generateUniqueUsername(String email) {
+        String baseUsername = email.split("@")[0];
+        String username = baseUsername;
+        int counter = 1;
+
+        while (userRepository.existsByUsername(username)) {
+            username = baseUsername + counter;
+            counter++;
+        }
+
+        return username;
     }
 
     private UserDto mapToDto(UserEntity entity) {

@@ -28,23 +28,7 @@ spring:
             maxAge: 3600
 
       routes:
-        # Auth service - OAuth2 routes
-        - id: auth-oauth2-authorization
-          uri: http://localhost:8081
-          predicates:
-            - Path=/oauth2/**
-          filters:
-            - StripPrefix=0
-
-        # Auth service - Login routes
-        - id: auth-login
-          uri: http://localhost:8081
-          predicates:
-            - Path=/login/**
-          filters:
-            - StripPrefix=0
-
-        # Auth service - API routes
+        # Auth service - Solo endpoints de validación
         - id: auth-service
           uri: http://localhost:8081
           predicates:
