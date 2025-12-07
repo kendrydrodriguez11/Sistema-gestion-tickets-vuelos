@@ -3,22 +3,25 @@ import { Link } from 'react-router-dom';
 import Button from '../components/common/Button';
 
 export default function Register() {
+  // Configuración de Auth0 - usando variables de entorno de Vite
+  const AUTH0_DOMAIN = import.meta.env.VITE_AUTH0_DOMAIN || 'dev-chzcisisthlmydkb.us.auth0.com';
+  const AUTH0_CLIENT_ID = import.meta.env.VITE_AUTH0_CLIENT_ID || 'zaSgoGFBnnNkvlUbNJv9qMrADRJn4wbp';
+  const REDIRECT_URI = import.meta.env.VITE_REDIRECT_URI || 'http://localhost:3000/login';
+  const AUTH0_AUDIENCE = import.meta.env.VITE_AUTH0_AUDIENCE || 'https://api.miapp.com';
+
   const handleAuth0Register = () => {
-    // Redirigir a Auth0 con screen_hint=signup para mostrar el formulario de registro
-    const auth0Domain = 'dev-chzcisisthlmydkb.us.auth0.com';
-    const clientId = 'zaSgoGFBnnNkvlUbNJv9qMrADRJn4wbp';
-    const redirectUri = encodeURIComponent(`${window.location.origin}/login`);
-    const audience = encodeURIComponent('https://api.miapp.com');
-    
-    const auth0Url = `https://${auth0Domain}/authorize?` +
-      `response_type=token&` +
-      `client_id=${clientId}&` +
-      `redirect_uri=${redirectUri}&` +
-      `audience=${audience}&` +
+    // Construir URL de autorización de Auth0 con screen_hint=signup
+    const authUrl = `https://${AUTH0_DOMAIN}/authorize?` +
+      `response_type=token id_token&` +
+      `client_id=${AUTH0_CLIENT_ID}&` +
+      `redirect_uri=${encodeURIComponent(REDIRECT_URI)}&` +
+      `audience=${encodeURIComponent(AUTH0_AUDIENCE)}&` +
       `scope=openid profile email&` +
-      `screen_hint=signup`; // Muestra el formulario de registro
+      `screen_hint=signup&` + // Esto muestra el formulario de registro
+      `nonce=${Math.random().toString(36).substring(7)}`;
     
-    window.location.href = auth0Url;
+    // Redirigir a Auth0
+    window.location.href = authUrl;
   };
 
   return (
@@ -95,6 +98,17 @@ export default function Register() {
             <Link to="/privacy" className="text-primary hover:underline">
               Política de Privacidad
             </Link>
+          </p>
+        </div>
+
+        {/* Debugging info (remover en producción) */}
+        <div className="mt-4 p-4 bg-gray-100 rounded-lg text-xs">
+          <p className="font-semibold mb-2">Configuración actual:</p>
+          <p>Domain: {AUTH0_DOMAIN}</p>
+          <p>Client ID: {AUTH0_CLIENT_ID}</p>
+          <p>Redirect URI: {REDIRECT_URI}</p>
+          <p className="mt-2 text-red-600">
+            ⚠️ Asegúrate de que esta URL esté en "Allowed Callback URLs" en Auth0
           </p>
         </div>
       </div>
