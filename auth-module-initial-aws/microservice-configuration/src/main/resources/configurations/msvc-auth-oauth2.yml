@@ -29,14 +29,19 @@ spring:
     oauth2:
       resourceserver:
         jwt:
+          # IMPORTANTE: Estas deben coincidir con tu configuración de Auth0
           issuer-uri: https://dev-chzcisisthlmydkb.us.auth0.com/
+          # Auth0 usa el endpoint /.well-known/jwks.json para las claves públicas
           jwk-set-uri: https://dev-chzcisisthlmydkb.us.auth0.com/.well-known/jwks.json
 
+# Configuración de Auth0 (debe coincidir con tu aplicación en Auth0 Dashboard)
 auth0:
   domain: dev-chzcisisthlmydkb.us.auth0.com
+  # CRÍTICO: Este audience DEBE estar configurado en tu Auth0 API
   audience: https://api.miapp.com
 
-  # 🔥 Solo para pruebas (NO usar en producción)
+  # Credenciales de la aplicación (solo para desarrollo/testing)
+  # En producción, NO incluir estas credenciales aquí
   client-id: zaSgoGFBnnNkvlUbNJv9qMrADRJn4wbp
   client-secret: Gr95txgUIxdbs4EZDfEQRKqtf6oYcvsAI-gj42Ufu2zOb-4fxiQO5zJqjQuIUzmD
 

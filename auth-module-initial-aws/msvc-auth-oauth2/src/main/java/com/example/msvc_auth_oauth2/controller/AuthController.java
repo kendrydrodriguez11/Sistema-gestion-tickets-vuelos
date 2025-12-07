@@ -40,17 +40,25 @@ public class AuthController {
         }
 
         try {
+            log.info("🔍 Intentando decodificar token...");
             Jwt jwt = jwtDecoder.decode(token);
+
+            log.info("✅ Token decodificado exitosamente");
+            log.info("   - Subject: {}", jwt.getSubject());
+            log.info("   - Issuer: {}", jwt.getIssuer());
+            log.info("   - Audience: {}", jwt.getAudience());
+            log.info("   - Expires: {}", jwt.getExpiresAt());
+
             return ResponseEntity.ok(buildValidationFromJwt(jwt));
 
         } catch (Exception e) {
-            log.error("Token validation failed: {}", e.getMessage());
+            log.error("❌ Token validation failed: {}", e.getMessage());
+            log.error("   - Token (primeros 20 chars): {}", token.substring(0, Math.min(20, token.length())));
             return ResponseEntity.ok(TokenValidationDto.builder()
                     .active(false)
                     .build());
         }
     }
-
     private TokenValidationDto buildValidationFromJwt(Jwt jwt) {
         String username = jwt.getSubject();
         String email = jwt.getClaim("email");
