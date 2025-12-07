@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plane, Calendar, Users, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import Input from '../common/Input';
 import Select from '../common/Select';
 import Button from '../common/Button';
@@ -59,7 +59,10 @@ export default function FlightSearchForm({ onSearch }) {
       return;
     }
 
+    // Guardar parámetros de búsqueda en el store
     setSearchParams(formData);
+    
+    // Llamar función de búsqueda
     onSearch(formData);
   };
 
@@ -102,9 +105,9 @@ export default function FlightSearchForm({ onSearch }) {
           value={formData.departureDate}
           onChange={handleChange}
           error={errors.departureDate}
-          icon={<Calendar className="w-5 h-5" />}
           min={new Date().toISOString().split('T')[0]}
           required
+          helperText="Formato: YYYY-MM-DD"
         />
 
         <Input
@@ -113,8 +116,8 @@ export default function FlightSearchForm({ onSearch }) {
           name="returnDate"
           value={formData.returnDate}
           onChange={handleChange}
-          icon={<Calendar className="w-5 h-5" />}
           min={formData.departureDate || new Date().toISOString().split('T')[0]}
+          helperText="Formato: YYYY-MM-DD"
         />
 
         <Input
@@ -124,7 +127,6 @@ export default function FlightSearchForm({ onSearch }) {
           value={formData.passengers}
           onChange={handleChange}
           error={errors.passengers}
-          icon={<Users className="w-5 h-5" />}
           min="1"
           max="9"
           required

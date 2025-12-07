@@ -1,87 +1,29 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, Phone, Plane } from 'lucide-react';
-import toast from 'react-hot-toast';
-import Input from '../components/common/Input';
+import { Plane } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import Button from '../components/common/Button';
-import authApi from '../api/authApi';
-import { validateEmail, validatePassword, validatePasswordConfirmation, validateUsername, validateName } from '../utils/validators';
 
 export default function Register() {
-  const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    firstName: '',
-    lastName: '',
-    phone: ''
-  });
-  const [errors, setErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const handleAuth0Register = () => {
+    // Redirigir a Auth0 con screen_hint=signup para mostrar el formulario de registro
+    const auth0Domain = 'dev-chzcisisthlmydkb.us.auth0.com';
+    const clientId = 'zaSgoGFBnnNkvlUbNJv9qMrADRJn4wbp';
+    const redirectUri = encodeURIComponent(`${window.location.origin}/login`);
+    const audience = encodeURIComponent('https://api.miapp.com');
     
-    // Limpiar error al escribir
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: null }));
-    }
-  };
-
-  const validate = () => {
-    const newErrors = {};
-
-    newErrors.username = validateUsername(formData.username);
-    newErrors.email = validateEmail(formData.email);
-    newErrors.password = validatePassword(formData.password);
-    newErrors.confirmPassword = validatePasswordConfirmation(formData.password, formData.confirmPassword);
-    newErrors.firstName = validateName(formData.firstName, 'nombre');
-    newErrors.lastName = validateName(formData.lastName, 'apellido');
-
-    // Filtrar errores null
-    Object.keys(newErrors).forEach(key => {
-      if (!newErrors[key]) delete newErrors[key];
-    });
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!validate()) {
-      toast.error('Por favor, corrige los errores del formulario');
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      await authApi.register({
-        username: formData.username,
-        email: formData.email,
-        password: formData.password,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        phone: formData.phone
-      });
-
-      toast.success('¡Cuenta creada exitosamente!');
-      navigate('/login');
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Error al registrar usuario');
-    } finally {
-      setIsLoading(false);
-    }
+    const auth0Url = `https://${auth0Domain}/authorize?` +
+      `response_type=token&` +
+      `client_id=${clientId}&` +
+      `redirect_uri=${redirectUri}&` +
+      `audience=${audience}&` +
+      `scope=openid profile email&` +
+      `screen_hint=signup`; // Muestra el formulario de registro
+    
+    window.location.href = auth0Url;
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-red-50 py-12 px-4">
-      <div className="max-w-2xl w-full">
+      <div className="max-w-md w-full">
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 text-4xl font-bold" style={{ color: 'var(--primary)' }}>
@@ -93,126 +35,67 @@ export default function Register() {
 
         {/* Formulario */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              <Input
-                label="Nombre"
-                type="text"
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleChange}
-                error={errors.firstName}
-                icon={<User className="w-5 h-5" />}
-                placeholder="Juan"
-                required
-              />
-
-              <Input
-                label="Apellido"
-                type="text"
-                name="lastName"
-                value={formData.lastName}
-                onChange={handleChange}
-                error={errors.lastName}
-                icon={<User className="w-5 h-5" />}
-                placeholder="Pérez"
-                required
-              />
+          <div className="space-y-6">
+            <div className="text-center">
+              <p className="text-gray-600 mb-6">
+                Crea tu cuenta usando Auth0 para una autenticación segura
+              </p>
+              
+              <Button
+                variant="primary"
+                fullWidth
+                size="lg"
+                onClick={handleAuth0Register}
+              >
+                Crear Cuenta con Auth0
+              </Button>
             </div>
 
-            <Input
-              label="Nombre de Usuario"
-              type="text"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              error={errors.username}
-              icon={<User className="w-5 h-5" />}
-              placeholder="juanperez"
-              required
-            />
-
-            <Input
-              label="Email"
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              error={errors.email}
-              icon={<Mail className="w-5 h-5" />}
-              placeholder="tu@email.com"
-              required
-            />
-
-            <Input
-              label="Teléfono"
-              type="tel"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              icon={<Phone className="w-5 h-5" />}
-              placeholder="0987654321"
-            />
-
-            <div className="grid md:grid-cols-2 gap-6">
-              <Input
-                label="Contraseña"
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                error={errors.password}
-                icon={<Lock className="w-5 h-5" />}
-                placeholder="••••••••"
-                required
-              />
-
-              <Input
-                label="Confirmar Contraseña"
-                type="password"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                error={errors.confirmPassword}
-                icon={<Lock className="w-5 h-5" />}
-                placeholder="••••••••"
-                required
-              />
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">
+                  Sistema de autenticación OAuth2
+                </span>
+              </div>
             </div>
 
-            <div className="flex items-start gap-2 text-sm">
-              <input type="checkbox" required className="mt-1 rounded" />
-              <span className="text-gray-600">
-                Acepto los{' '}
-                <Link to="/terms" className="text-primary hover:underline">
-                  Términos y Condiciones
-                </Link>{' '}
-                y la{' '}
-                <Link to="/privacy" className="text-primary hover:underline">
-                  Política de Privacidad
+            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+              <p className="text-sm text-blue-800 mb-3">
+                <strong>Beneficios de Auth0:</strong>
+              </p>
+              <ul className="text-sm text-blue-800 space-y-1">
+                <li>✓ Autenticación segura y cifrada</li>
+                <li>✓ Inicio de sesión con Google, Facebook, etc.</li>
+                <li>✓ Recuperación de contraseña fácil</li>
+                <li>✓ Protección contra ataques</li>
+              </ul>
+            </div>
+
+            <div className="pt-4 text-center">
+              <p className="text-gray-600">
+                ¿Ya tienes cuenta?{' '}
+                <Link to="/login" className="text-primary font-semibold hover:underline">
+                  Inicia sesión aquí
                 </Link>
-              </span>
+              </p>
             </div>
-
-            <Button
-              type="submit"
-              variant="primary"
-              fullWidth
-              isLoading={isLoading}
-              size="lg"
-            >
-              Crear Cuenta
-            </Button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-gray-600">
-              ¿Ya tienes cuenta?{' '}
-              <Link to="/login" className="text-primary font-semibold hover:underline">
-                Inicia sesión aquí
-              </Link>
-            </p>
           </div>
+        </div>
+
+        <div className="mt-6 text-center text-sm text-gray-500">
+          <p>
+            Al registrarte, aceptas nuestros{' '}
+            <Link to="/terms" className="text-primary hover:underline">
+              Términos y Condiciones
+            </Link>
+            {' '}y{' '}
+            <Link to="/privacy" className="text-primary hover:underline">
+              Política de Privacidad
+            </Link>
+          </p>
         </div>
       </div>
     </div>

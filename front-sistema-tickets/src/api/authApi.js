@@ -1,16 +1,10 @@
 import axiosInstance from './axiosConfig';
 
 export const authApi = {
-  // Registrar nuevo usuario
-  register: async (userData) => {
-    const response = await axiosInstance.post('/api/auth/register', userData);
-    return response.data;
-  },
-
-  // Iniciar sesión (devuelve URL de OAuth2)
-  getLoginUrl: async () => {
-    const response = await axiosInstance.get('/api/auth/login');
-    return response.data;
+  // Obtener perfil del usuario actual (usando el token de Auth0)
+  getProfile: async () => {
+    const response = await axiosInstance.get('/api/auth/me');
+    return response.data.user;
   },
 
   // Validar token
@@ -19,16 +13,15 @@ export const authApi = {
     return response.data;
   },
 
-  // Obtener perfil del usuario actual
-  getProfile: async () => {
-    const response = await axiosInstance.get('/api/users/me');
+  // Obtener información del usuario por ID
+  getUserById: async (userId) => {
+    const response = await axiosInstance.get(`/api/users/${userId}`);
     return response.data;
   },
 
   // Cerrar sesión
   logout: () => {
     localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
   }
 };
