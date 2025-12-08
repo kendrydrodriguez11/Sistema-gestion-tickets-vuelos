@@ -24,6 +24,8 @@ export const authApi = {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('user');
   }
+
+  
 };
 
 export default authApi;

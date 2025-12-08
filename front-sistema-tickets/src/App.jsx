@@ -11,12 +11,13 @@ import Profile from './pages/Profile';
 import PaymentSuccess from './pages/PaymentSuccess';
 import useAuthStore from './store/authStore';
 import toast from 'react-hot-toast';
+import Spinner from './components/common/Spinner';
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, isLoading } = useAuthStore();
   
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Cargando...</div>;
+    return <div className="min-h-screen flex items-center justify-center"><Spinner variant="plane" size="lg" text="Cargando..." /></div>;
   }
   
   if (!isAuthenticated) {
@@ -27,7 +28,7 @@ function ProtectedRoute({ children }) {
 }
 
 function App() {
-  const { isAuthenticated, loadUserProfile, setTokens } = useAuthStore();
+  const { isAuthenticated, loadUserProfile, setTokens, isLoading } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -38,6 +39,8 @@ function App() {
       
       if (hash) {
         try {
+          console.log('🔐 Auth0 callback detectado');
+          
           // Extraer tokens del hash (access_token, id_token)
           const hashParams = new URLSearchParams(hash.substring(1));
           const accessToken = hashParams.get('access_token');
@@ -50,7 +53,7 @@ function App() {
             return;
           }
 
-          console.log('✅ Auth0 callback detectado, tokens obtenidos');
+          console.log('✅ Tokens obtenidos de Auth0');
 
           // Guardar tokens
           setTokens(accessToken, idToken);
@@ -58,8 +61,12 @@ function App() {
           // Limpiar hash
           window.location.hash = '';
 
-          // Cargar perfil del usuario
+          // 🔥 IMPORTANTE: Cargar perfil del usuario desde tu backend
+          // Esto valida el token con Auth0 y crea/actualiza el usuario en tu BD
+          console.log('📡 Llamando a backend para validar usuario...');
           await loadUserProfile();
+
+          console.log('✅ Usuario cargado correctamente del backend');
 
           // Redirigir a home
           navigate('/');
@@ -67,13 +74,25 @@ function App() {
         } catch (error) {
           console.error('❌ Error procesando callback:', error);
           window.location.hash = '';
-          toast.error('Error al iniciar sesión');
+          toast.error('Error al iniciar sesión: ' + (error.message || 'Error desconocido'));
+          
+          // Limpiar tokens si hay error
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('idToken');
         }
       }
     };
 
     procesAuth0Callback();
   }, []);
+
+  if (isLoading && !isAuthenticated && window.location.hash) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Spinner variant="plane" size="xl" text="Iniciando sesión..." />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

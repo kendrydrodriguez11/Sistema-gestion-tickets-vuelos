@@ -252,3 +252,47 @@ textarea:focus {
   transform: translateY(-4px);
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
 }
+
+/* ========== TRANSICIONES ENTRE PÁGINAS ========== */
+.page-transition {
+  animation: fadeInPage 0.4s ease-in-out;
+}
+
+@keyframes fadeInPage {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Transición para cambios de ruta */
+.route-transition-enter {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.route-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 400ms ease-in-out, transform 400ms ease-in-out;
+}
+
+.route-transition-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.route-transition-exit-active {
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: opacity 300ms ease-in-out, transform 300ms ease-in-out;
+}
+
+/* Scroll suave en toda la aplicación */
+html {
+  scroll-behavior: smooth;
+}

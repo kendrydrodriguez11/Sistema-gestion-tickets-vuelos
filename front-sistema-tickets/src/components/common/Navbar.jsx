@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Plane, User, LogOut, Menu, X, Ticket, ChevronDown, LogIn } from 'lucide-react';
 import { useState } from 'react';
 import useAuthStore from '../../store/authStore';
+import toast from 'react-hot-toast';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -28,6 +29,7 @@ export default function Navbar() {
       `state=${state}&` +
       `nonce=${nonce}`;
     
+    console.log('🔐 Redirigiendo a Auth0:', authUrl);
     window.location.href = authUrl;
   };
 
@@ -111,20 +113,20 @@ export default function Navbar() {
               </>
             ) : (
               <button 
-                  onClick={() => {
-                    handleAuth0Login();
-                  }}
-                  className="btn btn-primary inline-flex items-center gap-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 rounded-lg px-4 py-2"
-                >
-                  <svg className="w-5 h-5" viewBox="0 0 48 48">
-                    <path fill="#EA4335" d="M24 9.5c3.94 0 7.5 1.37 10.29 4.07l7.68-7.68C37.15 1.69 30.94 0 24 0 14.62 0 6.51 5.38 2.56 13.22l8.93 6.92C13.51 13.52 18.34 9.5 24 9.5z"/>
-                    <path fill="#FBBC05" d="M46.13 24.55c0-1.57-.15-3.09-.43-4.55H24v9.11h12.46c-.54 2.92-2.17 5.39-4.63 7.06l8.06 6.26C43.83 38.14 46.13 31.74 46.13 24.55z"/>
-                    <path fill="#34A853" d="M11.49 28.14c-.48-1.43-.75-2.96-.75-4.54 0-1.58.27-3.11.75-4.54l-8.93-6.92C.89 15.55 0 19.68 0 24c0 4.32.89 8.45 2.56 12.86l8.93-6.92z"/>
-                    <path fill="#4285F4" d="M24 48c6.94 0 13.15-2.31 18.02-6.27l-8.06-6.26C31.18 37.3 27.74 38.5 24 38.5c-5.66 0-10.49-4.02-12.51-9.64l-8.93 6.92C6.51 42.62 14.62 48 24 48z"/>
-                  </svg>
+                onClick={() => {
+                  handleAuth0Login();
+                }}
+                className="btn btn-primary inline-flex items-center gap-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 rounded-lg px-4 py-2"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 48 48">
+                  <path fill="#EA4335" d="M24 9.5c3.94 0 7.5 1.37 10.29 4.07l7.68-7.68C37.15 1.69 30.94 0 24 0 14.62 0 6.51 5.38 2.56 13.22l8.93 6.92C13.51 13.52 18.34 9.5 24 9.5z"/>
+                  <path fill="#FBBC05" d="M46.13 24.55c0-1.57-.15-3.09-.43-4.55H24v9.11h12.46c-.54 2.92-2.17 5.39-4.63 7.06l8.06 6.26C43.83 38.14 46.13 31.74 46.13 24.55z"/>
+                  <path fill="#34A853" d="M11.49 28.14c-.48-1.43-.75-2.96-.75-4.54 0-1.58.27-3.11.75-4.54l-8.93-6.92C.89 15.55 0 19.68 0 24c0 4.32.89 8.45 2.56 12.86l8.93-6.92z"/>
+                  <path fill="#4285F4" d="M24 48c6.94 0 13.15-2.31 18.02-6.27l-8.06-6.26C31.18 37.3 27.74 38.5 24 38.5c-5.66 0-10.49-4.02-12.51-9.64l-8.93 6.92C6.51 42.62 14.62 48 24 48z"/>
+                </svg>
 
-                  Iniciar con Google
-                </button>
+                Iniciar con Google
+              </button>
             )}
           </div>
 

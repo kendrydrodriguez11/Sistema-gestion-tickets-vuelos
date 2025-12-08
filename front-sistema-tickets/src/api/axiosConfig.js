@@ -1,11 +1,12 @@
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-// Vite usa import.meta.env en lugar de process.env
+// 🔥 IMPORTANTE: Usar el GATEWAY, no el microservicio directamente
+// El gateway está en puerto 8080 y redirige a los microservicios
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
-console.log('API Base URL:', API_BASE_URL);
-console.log('All env vars:', import.meta.env);
+console.log('🌐 API Base URL:', API_BASE_URL);
+console.log('📋 Todas las peticiones pasarán por el API Gateway');
 
 // Crear instancia de axios
 const axiosInstance = axios.create({
@@ -20,19 +21,25 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('accessToken');
-    console.log('Request to:', config.url);
-    console.log('Token exists:', !!token);
+    
+    console.log('📤 REQUEST:', {
+      método: config.method.toUpperCase(),
+      ruta: config.url,
+      tieneToken: !!token,
+      baseURL: config.baseURL
+    });
     
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('Token added to request');
+      console.log('✅ Token agregado al header');
     } else {
-      console.warn('No token found in localStorage');
+      console.warn('⚠️ No hay token en localStorage');
     }
+    
     return config;
   },
   (error) => {
-    console.error('Request interceptor error:', error);
+    console.error('❌ Error en interceptor de request:', error);
     return Promise.reject(error);
   }
 );
@@ -40,27 +47,36 @@ axiosInstance.interceptors.request.use(
 // Interceptor de response - Manejar errores
 axiosInstance.interceptors.response.use(
   (response) => {
-    console.log('Response from:', response.config.url, 'Status:', response.status);
+    console.log('✅ RESPONSE:', {
+      status: response.status,
+      ruta: response.config.url,
+      datos: response.data
+    });
     return response;
   },
   async (error) => {
-    console.error('Response error:', error.response?.status, error.message);
-    
     const originalRequest = error.config;
+    
+    console.error('❌ RESPONSE ERROR:', {
+      status: error.response?.status,
+      url: error.config?.url,
+      mensaje: error.message,
+      errorData: error.response?.data
+    });
 
     // Si el token expiró (401)
     if (error.response?.status === 401 && !originalRequest._retry) {
-      console.log('Token expired or invalid, redirecting to login');
+      console.log('🔄 Token expirado o inválido, limpiando sesión...');
       originalRequest._retry = true;
 
-      // Limpiar storage y redirigir a login
+      // Limpiar storage
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       
       // Mostrar error solo si no estamos ya en la página de login
       if (!window.location.pathname.includes('/login')) {
         toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
-        window.location.href = '/login';
+        window.location.href = '/';
       }
       
       return Promise.reject(error);
@@ -69,11 +85,11 @@ axiosInstance.interceptors.response.use(
     // Manejar otros errores
     const errorMessage = error.response?.data?.message || 
                         error.response?.data?.error || 
+                        error.message ||
                         'Ha ocurrido un error';
     
-    // No mostrar toast para errores 401 (ya lo manejamos arriba)
     if (error.response?.status !== 401) {
-      console.error('API Error:', errorMessage);
+      console.error('🚨 Error de API:', errorMessage);
       toast.error(errorMessage);
     }
 
