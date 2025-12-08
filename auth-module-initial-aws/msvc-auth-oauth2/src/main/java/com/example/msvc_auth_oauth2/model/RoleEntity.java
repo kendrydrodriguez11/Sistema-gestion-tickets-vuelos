@@ -2,7 +2,7 @@ package com.example.msvc_auth_oauth2.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -28,7 +28,8 @@ public class RoleEntity {
     @Column(columnDefinition = "CHAR(36)")
     private UUID id;
 
-    @NotBlank
+    // ✅ CAMBIO: De @NotBlank a @NotNull (los enums no pueden usar @NotBlank)
+    @NotNull(message = "El nombre del rol es requerido")
     @Enumerated(EnumType.STRING)
     @Column(unique = true, nullable = false, length = 20)
     private UserRole name;

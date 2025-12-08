@@ -32,9 +32,6 @@ public class AuthController {
     @Value("${auth0.domain}")
     private String auth0Domain;
 
-    /**
-     * Endpoint de introspección de tokens Auth0
-     */
     @PostMapping("/introspect")
     public ResponseEntity<TokenValidationDto> introspectToken(@RequestBody Map<String, String> request) {
         String token = request.get("token");
@@ -95,9 +92,6 @@ public class AuthController {
                 .build();
     }
 
-    /**
-     * Validar token JWT
-     */
     @GetMapping("/validate")
     public ResponseEntity<Map<String, Object>> validateToken(@RequestHeader("Authorization") String authHeader) {
         log.info("=== Token Validation Request ===");
@@ -119,7 +113,7 @@ public class AuthController {
     }
 
     /**
-     * Obtener información del usuario desde Auth0 UserInfo endpoint
+     * ✅ CORREGIDO: Manejo de race condition y reintentos
      */
     @GetMapping("/me")
     public ResponseEntity<Map<String, Object>> getCurrentUser(@RequestHeader("Authorization") String authHeader) {
@@ -128,19 +122,17 @@ public class AuthController {
         try {
             String token = authHeader.replace("Bearer ", "");
 
-            // Decodificar el token para verificar que sea válido
+            // Decodificar el token
             Jwt jwt = jwtDecoder.decode(token);
             log.info("✅ JWT decodificado - Sub: {}", jwt.getSubject());
 
-            // Llamar al endpoint /userinfo de Auth0 para obtener email y name
+            // Obtener UserInfo de Auth0
             String userInfoUrl = "https://" + auth0Domain + "/userinfo";
-
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(token);
             HttpEntity<String> entity = new HttpEntity<>(headers);
 
             log.info("🔍 Llamando a Auth0 UserInfo: {}", userInfoUrl);
-
             ResponseEntity<Map> response = restTemplate.exchange(
                     userInfoUrl,
                     HttpMethod.GET,
@@ -151,7 +143,6 @@ public class AuthController {
             Map<String, Object> userInfo = response.getBody();
             log.info("✅ UserInfo obtenido: {}", userInfo);
 
-            // Extraer información del usuario
             String email = (String) userInfo.get("email");
             String name = (String) userInfo.get("name");
             String picture = (String) userInfo.get("picture");
@@ -163,33 +154,14 @@ public class AuthController {
 
             log.info("📧 Email extraído: {}", email);
 
-            // Buscar o crear usuario en la base de datos
-            try {
-                log.info("🔍 Buscando usuario por email: {}", email);
-                UserDto user = userService.getUserByEmail(email);
-                log.info("✅ Usuario encontrado en DB: {}", user.getUsername());
+            // ✅ LÓGICA CORREGIDA: Intentar obtener o crear usuario con reintentos
+            UserDto user = getOrCreateUser(email, name, picture);
 
-                return ResponseEntity.ok(Map.of(
-                        "user", user,
-                        "authenticated", true
-                ));
-
-            } catch (Exception e) {
-                log.info("⚠️ Usuario no encontrado, creando nuevo usuario: {}", email);
-
-                try {
-                    UserDto newUser = userService.createUserFromAuth0(email, name, picture);
-                    log.info("✅ Nuevo usuario creado: {}", newUser.getUsername());
-
-                    return ResponseEntity.ok(Map.of(
-                            "user", newUser,
-                            "authenticated", true
-                    ));
-                } catch (Exception createError) {
-                    log.error("❌ Error creando usuario: {}", createError.getMessage());
-                    throw createError;
-                }
-            }
+            log.info("✅ Usuario obtenido/creado: {}", user.getUsername());
+            return ResponseEntity.ok(Map.of(
+                    "user", user,
+                    "authenticated", true
+            ));
 
         } catch (JwtException e) {
             log.error("❌ JWT Error: {}", e.getMessage());
@@ -206,5 +178,59 @@ public class AuthController {
                     "details", e.getMessage()
             ));
         }
+    }
+
+    /**
+     * ✅ NUEVO: Método que maneja race conditions
+     * Intenta obtener el usuario, si no existe lo crea,
+     * y si falla porque ya existe (race condition), lo reintenta
+     */
+    private UserDto getOrCreateUser(String email, String name, String picture) {
+        int maxRetries = 3;
+        int retryCount = 0;
+
+        while (retryCount < maxRetries) {
+            try {
+                // Intentar obtener el usuario
+                log.info("🔍 Intento {} - Buscando usuario por email: {}", retryCount + 1, email);
+                return userService.getUserByEmail(email);
+
+            } catch (RuntimeException e) {
+                // Si no existe, intentar crearlo
+                log.info("⚠️ Usuario no encontrado, intentando crear: {}", email);
+
+                try {
+                    UserDto newUser = userService.createUserFromAuth0(email, name, picture);
+                    log.info("✅ Usuario creado exitosamente: {}", newUser.getUsername());
+                    return newUser;
+
+                } catch (IllegalArgumentException createError) {
+                    // Race condition: otro thread ya creó el usuario
+                    if (createError.getMessage().contains("already exists")) {
+                        log.warn("⚠️ Race condition detectada - Reintentando obtener usuario (intento {}/{})",
+                                retryCount + 1, maxRetries);
+
+                        retryCount++;
+
+                        // Esperar un poco antes de reintentar (backoff exponencial)
+                        try {
+                            Thread.sleep(100 * retryCount);
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                            throw new RuntimeException("Interrupted while waiting to retry");
+                        }
+
+                        // Continuar al siguiente intento
+                        continue;
+                    }
+
+                    // Si es otro tipo de error, lanzarlo
+                    throw createError;
+                }
+            }
+        }
+
+        // Si llegamos aquí, todos los reintentos fallaron
+        throw new RuntimeException("Failed to get or create user after " + maxRetries + " attempts: " + email);
     }
 }
