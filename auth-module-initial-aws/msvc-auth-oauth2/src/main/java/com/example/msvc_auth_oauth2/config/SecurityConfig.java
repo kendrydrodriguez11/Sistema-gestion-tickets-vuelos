@@ -17,14 +17,9 @@ import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -39,12 +34,8 @@ public class SecurityConfig {
     @Value("${auth0.audience}")
     private String audience;
 
-    @Value("${app.frontend.url}")
-    private String frontendUrl;
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        // Definir rutas públicas que NO necesitan JWT
         RequestMatcher publicEndpoints = new OrRequestMatcher(
                 new AntPathRequestMatcher("/api/auth/introspect"),
                 new AntPathRequestMatcher("/api/auth/validate"),
@@ -55,33 +46,24 @@ public class SecurityConfig {
         );
 
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                // ❌ ELIMINAR esta línea de CORS
+                // .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> authorize
-                        // Endpoints públicos - NO requieren autenticación
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/.well-known/**").permitAll()
-
-                        // Endpoints protegidos - SÍ requieren JWT válido
                         .requestMatchers("/api/users/**").authenticated()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-
-                        // Cualquier otra request requiere autenticación
                         .anyRequest().authenticated()
                 )
-
-                // CRÍTICO: OAuth2 Resource Server solo para rutas protegidas
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.decoder(jwtDecoder()))
-                        // Solo aplicar a requests que NO sean públicos
                         .bearerTokenResolver(request -> {
-                            // Si es un endpoint público, no extraer el token
                             if (publicEndpoints.matches(request)) {
                                 return null;
                             }
-                            // Para rutas protegidas, extraer el token del header
                             String authorization = request.getHeader("Authorization");
                             if (authorization != null && authorization.startsWith("Bearer ")) {
                                 return authorization.substring(7);
@@ -89,8 +71,6 @@ public class SecurityConfig {
                             return null;
                         })
                 )
-
-                // Session management
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 );
@@ -110,6 +90,8 @@ public class SecurityConfig {
         return jwtDecoder;
     }
 
+    // ❌ ELIMINAR TODO ESTE BEAN corsConfigurationSource
+    /*
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -124,15 +106,13 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+    */
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    /**
-     * Validador personalizado para verificar el audience del JWT
-     */
     static class AudienceValidator implements OAuth2TokenValidator<Jwt> {
         private final String audience;
 

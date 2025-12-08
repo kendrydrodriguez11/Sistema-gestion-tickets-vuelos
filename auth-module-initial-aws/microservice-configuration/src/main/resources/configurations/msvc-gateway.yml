@@ -9,23 +9,13 @@ spring:
       discovery:
         locator:
           enabled: true
-      globalcors:
-        corsConfigurations:
-          '[/**]':
-            allowedOriginPatterns: "*"
-            allowedMethods:
-              - GET
-              - POST
-              - PUT
-              - DELETE
-              - OPTIONS
-              - PATCH
-            allowedHeaders: "*"
-            allowCredentials: true
-            exposedHeaders:
-              - Authorization
-              - Content-Type
-            maxAge: 3600
+      # ❌ ELIMINAR desde aquí
+      # globalcors:
+      #   corsConfigurations:
+      #     '[/**]':
+      #       allowedOriginPatterns: "*"
+      #       ... etc
+      # ❌ hasta aquí
 
       routes:
         # Auth service - Solo endpoints de validación
