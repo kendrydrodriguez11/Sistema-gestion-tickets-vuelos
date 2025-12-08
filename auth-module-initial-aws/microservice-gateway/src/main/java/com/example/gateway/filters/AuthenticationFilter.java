@@ -53,7 +53,7 @@ public class AuthenticationFilter implements GlobalFilter {
 
         // Extraer token (quitar "Bearer ")
         String token = authHeader.substring(7);
-        log.debug("Validando token Auth0 para: {}", path);
+        log.debug("Validando token Auth0 para: {}", token);
 
         // Validar token con el servicio de autenticación
         return authWebClient.validateToken(token)

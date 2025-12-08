@@ -17,16 +17,25 @@ public class AuthWebClient {
     private final WebClient webClient;
 
     public Mono<Map<String, Object>> validateToken(String token) {
-        return webClient.post()
-                .uri("/api/auth/introspect")
-                .bodyValue(Map.of("token", token))
-                .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
-                .doOnSuccess(response -> {
-                    Boolean isActive = (Boolean) response.get("active");
-                    log.debug("Token validation response - active: {}", isActive);
-                })
-                .doOnError(error -> log.error("Error validating token: {}", error.getMessage()))
-                .onErrorReturn(Map.of("active", false));
+
+        log.info("🚀 Entrando a validateToken()");
+        try {
+            log.info("funciona");
+            return webClient.post()
+                    .uri("/api/auth/introspect")
+                    .bodyValue(Map.of("token", token))
+                    .retrieve()
+                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {
+                    })
+                    .doOnSuccess(r -> log.info("✅ RESPUESTA OK: {}", r))
+                    .doOnError(e -> log.error("❌ ERROR: ", e))
+                    .onErrorReturn(Map.of("active", false));
+
+        } catch (Exception e) {
+            log.info("error en la peticion");
+            return null;
+        }
     }
+
+
 }

@@ -33,6 +33,7 @@ public class AuthController {
     @PostMapping("/introspect")
     public ResponseEntity<TokenValidationDto> introspectToken(@RequestBody Map<String, String> request) {
         String token = request.get("token");
+        System.out.println("entrooo");
 
         log.info("=== Token Introspection Request ===");
 

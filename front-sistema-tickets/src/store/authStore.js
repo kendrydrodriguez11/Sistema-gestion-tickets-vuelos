@@ -14,82 +14,75 @@ export const useAuthStore = create(
       error: null,
 
       // Acciones
-      register: async (userData) => {
-        set({ isLoading: true, error: null });
-        try {
-          const user = await authApi.register(userData);
-          set({ user, isLoading: false });
-          return user;
-        } catch (error) {
-          set({ 
-            error: error.response?.data?.message || 'Error al registrar usuario',
-            isLoading: false 
-          });
-          throw error;
-        }
-      },
-
-      login: async (credentials) => {
-        set({ isLoading: true, error: null });
-        try {
-          // Nota: El login con OAuth2 se maneja de forma diferente
-          // Este método es para casos especiales o testing
-          set({ isLoading: false });
-        } catch (error) {
-          set({ 
-            error: error.response?.data?.message || 'Error al iniciar sesión',
-            isLoading: false 
-          });
-          throw error;
-        }
-      },
-
       setTokens: (accessToken, refreshToken) => {
+        console.log('🔐 Setting tokens in store...');
+        
+        // Guardar en localStorage PRIMERO
         localStorage.setItem('accessToken', accessToken);
         if (refreshToken) {
           localStorage.setItem('refreshToken', refreshToken);
         }
+        
+        // Luego actualizar el state
         set({ 
           accessToken, 
           refreshToken, 
           isAuthenticated: true 
         });
+        
+        console.log('✅ Tokens set successfully');
       },
 
       loadUserProfile: async () => {
+        console.log('👤 Loading user profile...');
+        
         try {
-          // Verificar que el token existe ANTES de hacer la petición
+          // CRÍTICO: Verificar token ANTES de hacer la petición
           const token = localStorage.getItem('accessToken');
           
           if (!token) {
-            console.error('No access token found in localStorage');
+            console.error('❌ No access token found in localStorage');
             throw new Error('No access token available');
           }
           
-          console.log('Token exists, length:', token.length);
-          console.log('Making request to /api/auth/me...');
+          console.log('✓ Token exists in localStorage, length:', token.length);
+          console.log('✓ Making request to /api/auth/me...');
           
+          // Hacer la petición
           const userData = await authApi.getProfile();
+          
+          console.log('✅ User profile loaded successfully:', userData);
           
           set({ 
             user: userData, 
             isAuthenticated: true,
-            isLoading: false 
+            isLoading: false,
+            error: null
           });
           
-          console.log('User profile loaded successfully:', userData);
-          
           return userData;
-        } catch (error) {
-          console.error('Failed to load user profile:', error);
           
+        } catch (error) {
+          console.error('❌ Failed to load user profile');
+          console.error('Error type:', error.name);
+          console.error('Error message:', error.message);
+          
+          if (error.response) {
+            console.error('Response status:', error.response.status);
+            console.error('Response data:', error.response.data);
+          }
+          
+          // Limpiar estado en caso de error
           set({ 
             user: null, 
             isAuthenticated: false,
-            isLoading: false 
+            isLoading: false,
+            accessToken: null,
+            refreshToken: null,
+            error: error.message
           });
           
-          // Limpiar tokens si falla
+          // Limpiar tokens
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
           
@@ -98,7 +91,10 @@ export const useAuthStore = create(
       },
 
       logout: () => {
+        console.log('👋 Logging out...');
+        
         authApi.logout();
+        
         set({
           user: null,
           accessToken: null,
@@ -106,6 +102,8 @@ export const useAuthStore = create(
           isAuthenticated: false,
           error: null
         });
+        
+        console.log('✅ Logged out successfully');
       },
 
       clearError: () => set({ error: null }),

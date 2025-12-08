@@ -94,7 +94,7 @@ spring:
 
 security:
   service:
-    url: http://localhost:8081/api/auth
+    url: http://localhost:8081
 
 eureka:
   client:
