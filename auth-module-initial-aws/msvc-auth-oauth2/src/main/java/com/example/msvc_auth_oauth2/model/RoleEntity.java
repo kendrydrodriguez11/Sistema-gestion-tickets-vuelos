@@ -1,5 +1,6 @@
 package com.example.msvc_auth_oauth2.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -35,6 +36,8 @@ public class RoleEntity {
     @Column(length = 200)
     private String description;
 
+    // IMPORTANTE: Cambiar a JsonBackReference para evitar ciclos
+    @JsonBackReference
     @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
     @Builder.Default
     private Set<UserEntity> users = new HashSet<>();

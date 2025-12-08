@@ -1,5 +1,6 @@
 package com.example.msvc_auth_oauth2.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -66,6 +67,8 @@ public class UserEntity {
     @Column(name = "credentials_non_expired", nullable = false)
     private Boolean credentialsNonExpired = true;
 
+    // IMPORTANTE: EAGER fetch para evitar LazyInitializationException
+    @JsonManagedReference
     @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "user_roles",
@@ -96,11 +99,9 @@ public class UserEntity {
 
     public void addRole(RoleEntity role) {
         this.roles.add(role);
-        role.getUsers().add(this);
     }
 
     public void removeRole(RoleEntity role) {
         this.roles.remove(role);
-        role.getUsers().remove(this);
     }
 }

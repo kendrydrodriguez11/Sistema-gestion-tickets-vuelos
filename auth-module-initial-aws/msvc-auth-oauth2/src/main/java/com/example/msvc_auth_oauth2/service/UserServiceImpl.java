@@ -62,11 +62,12 @@ public class UserServiceImpl implements UserService {
                     RoleEntity newRole = RoleEntity.builder()
                             .name(roleName)
                             .description(roleName.name() + " role")
+                            .users(new HashSet<>())
                             .build();
                     return roleRepository.save(newRole);
                 });
 
-        user.addRole(role);
+        user.getRoles().add(role);
         UserEntity updated = userRepository.save(user);
 
         log.info("Role {} added to user {}", roleName, userId);
@@ -82,7 +83,7 @@ public class UserServiceImpl implements UserService {
         RoleEntity role = roleRepository.findByName(roleName)
                 .orElseThrow(() -> new RuntimeException("Role not found"));
 
-        user.removeRole(role);
+        user.getRoles().remove(role);
         UserEntity updated = userRepository.save(user);
 
         log.info("Role {} removed from user {}", roleName, userId);
@@ -133,7 +134,7 @@ public class UserServiceImpl implements UserService {
                     return roleRepository.save(role);
                 });
 
-        // Generar username único a partir del email
+        // Generar username único
         String username = generateUniqueUsername(email);
 
         // Parsear nombre
@@ -147,10 +148,11 @@ public class UserServiceImpl implements UserService {
             }
         }
 
+        // Crear nuevo usuario
         UserEntity newUser = UserEntity.builder()
                 .username(username)
                 .email(email)
-                .password(passwordEncoder.encode(UUID.randomUUID().toString())) // Password random
+                .password(passwordEncoder.encode(UUID.randomUUID().toString()))
                 .firstName(firstName)
                 .lastName(lastName)
                 .enabled(true)
@@ -161,16 +163,19 @@ public class UserServiceImpl implements UserService {
                 .lastLogin(LocalDateTime.now())
                 .build();
 
-        newUser.addRole(userRole);
+        // IMPORTANTE: Agregar rol ANTES de guardar
+        newUser.getRoles().add(userRole);
 
+        // Guardar
         UserEntity savedUser = userRepository.save(newUser);
         log.info("New user created successfully from Auth0: {}", savedUser.getUsername());
 
+        // CRÍTICO: Devolver DTO, NO la entidad
         return mapToDto(savedUser);
     }
 
     private String generateUniqueUsername(String email) {
-        String baseUsername = email.split("@")[0];
+        String baseUsername = email.split("@")[0].replaceAll("[^a-zA-Z0-9_]", "");
         String username = baseUsername;
         int counter = 1;
 
