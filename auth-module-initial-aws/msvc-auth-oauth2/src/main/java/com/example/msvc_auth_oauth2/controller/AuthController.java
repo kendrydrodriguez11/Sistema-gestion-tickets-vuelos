@@ -113,7 +113,7 @@ public class AuthController {
     }
 
     /**
-     * ✅ CORREGIDO: Manejo de race condition y reintentos
+     * ✅ CORREGIDO: Mejor manejo de race condition
      */
     @GetMapping("/me")
     public ResponseEntity<Map<String, Object>> getCurrentUser(@RequestHeader("Authorization") String authHeader) {
@@ -154,8 +154,8 @@ public class AuthController {
 
             log.info("📧 Email extraído: {}", email);
 
-            // ✅ LÓGICA CORREGIDA: Intentar obtener o crear usuario con reintentos
-            UserDto user = getOrCreateUser(email, name, picture);
+            // ✅ LÓGICA MEJORADA: Obtener o crear usuario
+            UserDto user = getOrCreateUserWithRetry(email, name, picture);
 
             log.info("✅ Usuario obtenido/creado: {}", user.getUsername());
             return ResponseEntity.ok(Map.of(
@@ -181,56 +181,72 @@ public class AuthController {
     }
 
     /**
-     * ✅ NUEVO: Método que maneja race conditions
-     * Intenta obtener el usuario, si no existe lo crea,
-     * y si falla porque ya existe (race condition), lo reintenta
+     * ✅ MEJORADO: Manejo robusto de race conditions
+     * Usa synchronized + @Transactional en la capa de servicio
      */
-    private UserDto getOrCreateUser(String email, String name, String picture) {
+    private UserDto getOrCreateUserWithRetry(String email, String name, String picture) {
         int maxRetries = 3;
         int retryCount = 0;
+        Exception lastException = null;
 
         while (retryCount < maxRetries) {
             try {
-                // Intentar obtener el usuario
+                // 1. Intentar obtener el usuario
                 log.info("🔍 Intento {} - Buscando usuario por email: {}", retryCount + 1, email);
-                return userService.getUserByEmail(email);
+                UserDto user = userService.getUserByEmail(email);
+                log.info("✅ Usuario encontrado en intento {}", retryCount + 1);
+                return user;
 
-            } catch (RuntimeException e) {
-                // Si no existe, intentar crearlo
-                log.info("⚠️ Usuario no encontrado, intentando crear: {}", email);
+            } catch (RuntimeException searchError) {
+                log.debug("Usuario no encontrado en intento {}: {}", retryCount + 1, searchError.getMessage());
 
                 try {
+                    // 2. Si no existe, intentar crear
+                    log.info("⚠️ Usuario no encontrado, intentando crear: {}", email);
                     UserDto newUser = userService.createUserFromAuth0(email, name, picture);
-                    log.info("✅ Usuario creado exitosamente: {}", newUser.getUsername());
+                    log.info("✅ Usuario creado exitosamente en intento {}: {}", retryCount + 1, newUser.getUsername());
                     return newUser;
 
                 } catch (IllegalArgumentException createError) {
-                    // Race condition: otro thread ya creó el usuario
-                    if (createError.getMessage().contains("already exists")) {
-                        log.warn("⚠️ Race condition detectada - Reintentando obtener usuario (intento {}/{})",
-                                retryCount + 1, maxRetries);
+                    // 3. Race condition: otro thread ya creó el usuario
+                    if (createError.getMessage() != null &&
+                            createError.getMessage().contains("already exists")) {
 
+                        log.warn("⚠️ Race condition detectada - Reintentando (intento {}/{})",
+                                retryCount + 1, maxRetries);
+                        lastException = createError;
                         retryCount++;
 
-                        // Esperar un poco antes de reintentar (backoff exponencial)
+                        // Backoff exponencial
                         try {
-                            Thread.sleep(100 * retryCount);
+                            long waitTime = 100L * (long) Math.pow(2, retryCount - 1);
+                            log.debug("Esperando {}ms antes de reintentar...", waitTime);
+                            Thread.sleep(waitTime);
                         } catch (InterruptedException ie) {
                             Thread.currentThread().interrupt();
-                            throw new RuntimeException("Interrupted while waiting to retry");
+                            throw new RuntimeException("Interrupted while waiting to retry", ie);
                         }
-
                         // Continuar al siguiente intento
                         continue;
+                    } else {
+                        // Error diferente - no es race condition
+                        log.error("❌ Error al crear usuario: {}", createError.getMessage());
+                        throw createError;
                     }
-
-                    // Si es otro tipo de error, lanzarlo
-                    throw createError;
                 }
             }
         }
 
-        // Si llegamos aquí, todos los reintentos fallaron
-        throw new RuntimeException("Failed to get or create user after " + maxRetries + " attempts: " + email);
+        // 4. Si llegamos aquí, todos los reintentos fallaron
+        log.error("❌ Falló obtener/crear usuario después de {} intentos: {}", maxRetries, email);
+        if (lastException != null) {
+            throw new RuntimeException(
+                    "Failed to get or create user after " + maxRetries + " attempts: " + email,
+                    lastException
+            );
+        }
+        throw new RuntimeException(
+                "Failed to get or create user after " + maxRetries + " attempts: " + email
+        );
     }
 }

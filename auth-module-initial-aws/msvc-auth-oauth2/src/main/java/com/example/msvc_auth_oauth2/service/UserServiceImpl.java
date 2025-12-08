@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -114,64 +115,96 @@ public class UserServiceImpl implements UserService {
         log.debug("Last login updated for email: {}", email);
     }
 
+    /**
+     * ✅ CORREGIDO: Sin verificación doble, dejar que la BD maneje la constraint
+     */
     @Override
     @Transactional
     public UserDto createUserFromAuth0(String email, String name, String picture) {
         log.info("Creating new user from Auth0: {}", email);
 
-        // Verificar si ya existe
-        if (userRepository.existsByEmail(email)) {
-            throw new IllegalArgumentException("User already exists with email: " + email);
-        }
+        try {
+            // ✅ CAMBIO: No verificar existencia, dejar que la BD lance la excepción
 
-        // Obtener o crear rol USER
-        RoleEntity userRole = roleRepository.findByName(UserRole.ROLE_USER)
-                .orElseGet(() -> {
-                    RoleEntity role = RoleEntity.builder()
-                            .name(UserRole.ROLE_USER)
-                            .description("Default user role")
-                            .build();
-                    return roleRepository.save(role);
-                });
+            // Obtener o crear rol USER
+            RoleEntity userRole = roleRepository.findByName(UserRole.ROLE_USER)
+                    .orElseGet(() -> {
+                        RoleEntity role = RoleEntity.builder()
+                                .name(UserRole.ROLE_USER)
+                                .description("Default user role")
+                                .build();
+                        return roleRepository.save(role);
+                    });
 
-        // Generar username único
-        String username = generateUniqueUsername(email);
+            // Generar username único
+            String username = generateUniqueUsername(email);
 
-        // Parsear nombre
-        String firstName = null;
-        String lastName = null;
-        if (name != null && !name.isEmpty()) {
-            String[] nameParts = name.split(" ", 2);
-            firstName = nameParts[0];
-            if (nameParts.length > 1) {
-                lastName = nameParts[1];
+            // Parsear nombre
+            String firstName = null;
+            String lastName = null;
+            if (name != null && !name.isEmpty()) {
+                String[] nameParts = name.split(" ", 2);
+                firstName = nameParts[0];
+                if (nameParts.length > 1) {
+                    lastName = nameParts[1];
+                }
             }
+
+            // Crear nuevo usuario
+            UserEntity newUser = UserEntity.builder()
+                    .username(username)
+                    .email(email)
+                    .password(passwordEncoder.encode(UUID.randomUUID().toString()))
+                    .firstName(firstName)
+                    .lastName(lastName)
+                    .enabled(true)
+                    .accountNonExpired(true)
+                    .accountNonLocked(true)
+                    .credentialsNonExpired(true)
+                    .roles(new HashSet<>())
+                    .lastLogin(LocalDateTime.now())
+                    .build();
+
+            // IMPORTANTE: Agregar rol ANTES de guardar
+            newUser.getRoles().add(userRole);
+
+            // Guardar usuario
+            log.info("Attempting to save user with email: {}", email);
+            UserEntity savedUser = userRepository.save(newUser);
+
+            log.info("✅ User created successfully from Auth0: {} (ID: {})",
+                    savedUser.getUsername(), savedUser.getId());
+
+            return mapToDto(savedUser);
+
+        } catch (DataIntegrityViolationException e) {
+            // La excepción se lanza porque el email ya existe
+            log.warn("⚠️ User already exists with email: {}", email);
+            log.warn("Exception: {}", e.getMessage());
+
+            // Intentar obtener el usuario que ya existe
+            try {
+                UserEntity existingUser = userRepository.findByEmail(email)
+                        .orElseThrow(() -> new RuntimeException(
+                                "User creation failed but user not found either: " + email
+                        ));
+
+                log.info("✅ Retrieved existing user: {}", existingUser.getUsername());
+                return mapToDto(existingUser);
+
+            } catch (Exception getError) {
+                log.error("❌ Failed to retrieve existing user: {}", email, getError);
+                throw new RuntimeException(
+                        "User already exists with email: " + email, e
+                );
+            }
+
+        } catch (Exception e) {
+            log.error("❌ Error creating user from Auth0: {}", e.getMessage(), e);
+            throw new RuntimeException(
+                    "Failed to create user from Auth0: " + e.getMessage(), e
+            );
         }
-
-        // Crear nuevo usuario
-        UserEntity newUser = UserEntity.builder()
-                .username(username)
-                .email(email)
-                .password(passwordEncoder.encode(UUID.randomUUID().toString()))
-                .firstName(firstName)
-                .lastName(lastName)
-                .enabled(true)
-                .accountNonExpired(true)
-                .accountNonLocked(true)
-                .credentialsNonExpired(true)
-                .roles(new HashSet<>())
-                .lastLogin(LocalDateTime.now())
-                .build();
-
-        // IMPORTANTE: Agregar rol ANTES de guardar
-        newUser.getRoles().add(userRole);
-
-        // Guardar
-        UserEntity savedUser = userRepository.save(newUser);
-        log.info("New user created successfully from Auth0: {}", savedUser.getUsername());
-
-        // CRÍTICO: Devolver DTO, NO la entidad
-        return mapToDto(savedUser);
     }
 
     private String generateUniqueUsername(String email) {
@@ -179,9 +212,22 @@ public class UserServiceImpl implements UserService {
         String username = baseUsername;
         int counter = 1;
 
+        // Truncar si es muy largo
+        int maxLength = 50;
+        if (baseUsername.length() > maxLength) {
+            baseUsername = baseUsername.substring(0, maxLength);
+        }
+
+        username = baseUsername;
         while (userRepository.existsByUsername(username)) {
             username = baseUsername + counter;
             counter++;
+
+            // Evitar desbordamiento
+            if (counter > 1000) {
+                username = UUID.randomUUID().toString().substring(0, 20);
+                break;
+            }
         }
 
         return username;
