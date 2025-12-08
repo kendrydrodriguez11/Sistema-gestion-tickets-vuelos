@@ -1,273 +1,222 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Plane, AlertCircle } from 'lucide-react';
-import toast from 'react-hot-toast';
-import Button from '../components/common/Button';
-import useAuthStore from '../store/authStore';
+import { Plane, Mail, Shield, Clock } from 'lucide-react';
 
 export default function Login() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { setTokens, loadUserProfile } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
-  const [debugInfo, setDebugInfo] = useState(null);
-  
-  // Usar ref para evitar procesamiento duplicado
   const hasProcessedAuth = useRef(false);
 
-  const AUTH0_DOMAIN = import.meta.env.VITE_AUTH0_DOMAIN || 'dev-chzcisisthlmydkb.us.auth0.com';
-  const AUTH0_CLIENT_ID = import.meta.env.VITE_AUTH0_CLIENT_ID || 'zaSgoGFBnnNkvlUbNJv9qMrADRJn4wbp';
-  const REDIRECT_URI = import.meta.env.VITE_REDIRECT_URI || 'http://localhost:3000/login';
-  const AUTH0_AUDIENCE = import.meta.env.VITE_AUTH0_AUDIENCE || 'https://api.miapp.com';
-
-  useEffect(() => {
-    // Si ya procesamos la autenticación, no hacer nada
-    if (hasProcessedAuth.current) return;
-
-    const hash = location.hash;
-    if (!hash) return;
-
-    const params = new URLSearchParams(hash.substring(1));
-    const accessToken = params.get('access_token');
-    const idToken = params.get('id_token');
-    const error = params.get('error');
-    const errorDescription = params.get('error_description');
-
-    if (error) {
-      console.error('Auth0 Error:', { error, errorDescription });
-      toast.error(errorDescription || 'Error en la autenticación');
-      setDebugInfo({ error, errorDescription, type: 'auth0_error' });
-      window.location.hash = '';
-      return;
-    }
-
-    if (accessToken) {
-      // Marcar como procesado INMEDIATAMENTE
-      hasProcessedAuth.current = true;
-      
-      console.log('=== Token Received ===');
-      console.log('Access Token (first 50 chars):', accessToken.substring(0, 50) + '...');
-      console.log('Token length:', accessToken.length);
-      
-      try {
-        const tokenParts = accessToken.split('.');
-        if (tokenParts.length === 3) {
-          const payload = JSON.parse(atob(tokenParts[1]));
-          console.log('Token Payload:', payload);
-          setDebugInfo({ 
-            payload, 
-            tokenLength: accessToken.length,
-            type: 'token_received' 
-          });
-        }
-      } catch (e) {
-        console.error('Error decoding token:', e);
-      }
-
-      // Limpiar hash ANTES de procesar
-      window.history.replaceState(null, '', window.location.pathname);
-
-      // Procesar autenticación
-      handleAuthSuccess(accessToken, idToken);
-    }
-  }, [location.hash]); // Solo escuchar cambios en el hash
-
-  const handleAuthSuccess = async (accessToken, idToken) => {
-    setIsLoading(true);
-    
-    try {
-      console.log('=== Starting Auth Process ===');
-      
-      // 1. Guardar token PRIMERO
-      console.log('Step 1: Saving token to localStorage...');
-      localStorage.setItem('accessToken', accessToken);
-      
-      // 2. Verificar que se guardó
-      const savedToken = localStorage.getItem('accessToken');
-      if (!savedToken) {
-        throw new Error('Failed to save token to localStorage');
-      }
-      console.log('✓ Token saved successfully');
-      
-      // 3. Actualizar store
-      console.log('Step 2: Updating auth store...');
-      setTokens(accessToken, null);
-      console.log('✓ Store updated');
-      
-      // 4. Esperar un momento para asegurar sincronización
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      // 5. Cargar perfil
-      console.log('Step 3: Loading user profile...');
-      await loadUserProfile();
-      console.log('✓ Profile loaded');
-      
-      toast.success('¡Bienvenido!');
-      
-      // 6. Redirigir
-      setTimeout(() => {
-        navigate('/search', { replace: true });
-      }, 500);
-      
-    } catch (error) {
-      console.error('=== Auth Error ===');
-      console.error('Error details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
-      
-      let errorMessage = 'Error al autenticar';
-      
-      if (error.response?.status === 401) {
-        errorMessage = 'Token inválido. Por favor, verifica la configuración de Auth0.';
-        
-        const debugInfo = {
-          tokenExists: !!localStorage.getItem('accessToken'),
-          audience: AUTH0_AUDIENCE,
-          issuer: `https://${AUTH0_DOMAIN}/`,
-          errorData: error.response?.data
-        };
-        
-        console.error('Auth0 Configuration Debug:', debugInfo);
-        setDebugInfo(debugInfo);
-      } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
-      toast.error(errorMessage);
-      
-      // Limpiar y resetear
-      localStorage.removeItem('accessToken');
-      hasProcessedAuth.current = false;
-      
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const AUTH0_DOMAIN = 'dev-chzcisisthlmydkb.us.auth0.com';
+  const AUTH0_CLIENT_ID = 'zaSgoGFBnnNkvlUbNJv9qMrADRJn4wbp';
+  const REDIRECT_URI = 'http://localhost:3000/login';
+  const AUTH0_AUDIENCE = 'https://api.miapp.com';
 
   const handleAuth0Login = () => {
     const state = Math.random().toString(36).substring(7);
     const nonce = Math.random().toString(36).substring(7);
-    
     sessionStorage.setItem('auth0_state', state);
-    
-    const authUrl = `https://${AUTH0_DOMAIN}/authorize?` +
-      `response_type=token id_token&` +
-      `client_id=${AUTH0_CLIENT_ID}&` +
-      `redirect_uri=${encodeURIComponent(REDIRECT_URI)}&` +
-      `audience=${encodeURIComponent(AUTH0_AUDIENCE)}&` +
-      `scope=openid profile email&` +
-      `state=${state}&` +
-      `nonce=${nonce}`;
-    
-    console.log('Redirecting to Auth0...');
+    const authUrl = `https://${AUTH0_DOMAIN}/authorize?response_type=token id_token&client_id=${AUTH0_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&audience=${encodeURIComponent(AUTH0_AUDIENCE)}&scope=openid profile email&state=${state}&nonce=${nonce}`;
     window.location.href = authUrl;
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-red-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600">Procesando autenticación...</p>
-          <p className="text-sm text-gray-500 mt-2">Por favor espera...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-white">Autenticando...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-red-50 py-12 px-4">
-      <div className="max-w-md w-full">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 text-4xl font-bold text-primary">
-            <Plane className="w-10 h-10" />
-            <span>FlightBook</span>
-          </div>
-          <p className="text-gray-600 mt-2">Inicia sesión en tu cuenta</p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center py-12 px-4 relative overflow-hidden">
+      {/* Elementos decorativos animados */}
+      <div className="absolute top-10 right-10 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute bottom-10 left-10 w-80 h-80 bg-blue-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+      <div className="absolute top-1/2 right-1/4 w-60 h-60 bg-cyan-500/10 rounded-full blur-3xl" style={{ animation: 'float 3s ease-in-out infinite' }}></div>
 
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <div className="space-y-6">
-            <div className="text-center">
-              <p className="text-gray-600 mb-6">
-                Usa Auth0 para iniciar sesión de forma segura
-              </p>
-              
-              <Button
-                variant="primary"
-                fullWidth
-                size="lg"
-                onClick={handleAuth0Login}
-              >
-                Iniciar Sesión con Auth0
-              </Button>
+      {/* Contenedor principal */}
+      <div className="relative z-10 w-full max-w-5xl">
+        {/* Grid de 2 columnas */}
+        <div className="grid md:grid-cols-2 gap-8 items-center">
+          {/* COLUMNA IZQUIERDA - Imagen y descripción */}
+          <div className="hidden md:flex flex-col justify-center text-white space-y-8">
+            {/* Logo y marca */}
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 rounded-xl bg-blue-400/20 flex items-center justify-center backdrop-blur-md border border-blue-400/30">
+                <Plane className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight">FlightBook</h1>
+                <p className="text-blue-200 text-sm font-medium">Viaja con confianza</p>
+              </div>
             </div>
 
+            {/* Imagen ilustrativa SVG */}
+            <div className="relative w-full h-56 flex items-center justify-center">
+              <svg
+                viewBox="0 0 400 300"
+                className="w-full h-full opacity-60 hover:opacity-80 transition-opacity"
+                fill="none"
+                stroke="white"
+              >
+                <defs>
+                  <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="white" stopOpacity="0.1" />
+                    <stop offset="100%" stopColor="white" stopOpacity="0.05" />
+                  </linearGradient>
+                </defs>
+                <rect width="400" height="300" fill="url(#skyGrad)" />
+                <path d="M 0 150 Q 200 140 400 150" strokeWidth="1" opacity="0.2" />
+
+                {/* Avión principal */}
+                <g transform="translate(200, 120)">
+                  <ellipse cx="0" cy="0" rx="35" ry="12" fill="white" opacity="0.15" />
+                  <path d="M -25 -3 L 25 -3 L 40 -8 L 25 -1 L 40 0 L 25 0 L -25 3 Z" fill="white" opacity="0.2" strokeWidth="0" />
+                  <circle cx="-10" cy="0" r="2" fill="white" opacity="0.3" />
+                  <circle cx="0" cy="0" r="2" fill="white" opacity="0.3" />
+                  <circle cx="10" cy="0" r="2" fill="white" opacity="0.3" />
+                </g>
+
+                {/* Ciudades */}
+                <g opacity="0.3">
+                  <circle cx="80" cy="220" r="6" fill="white" />
+                  <circle cx="80" cy="220" r="10" fill="none" strokeWidth="1" />
+                  <text x="80" y="245" textAnchor="middle" fontSize="11" fill="white" fontWeight="bold">Origen</text>
+
+                  <circle cx="320" cy="220" r="6" fill="white" />
+                  <circle cx="320" cy="220" r="10" fill="none" strokeWidth="1" />
+                  <text x="320" y="245" textAnchor="middle" fontSize="11" fill="white" fontWeight="bold">Destino</text>
+
+                  <path d="M 90 218 Q 200 100 310 218" strokeWidth="1" strokeDasharray="4" opacity="0.2" />
+                </g>
+              </svg>
+            </div>
+
+            {/* Descripción */}
+            <div className="space-y-3">
+              <h2 className="text-2xl font-bold leading-tight">
+                Descubre tu próximo destino
+              </h2>
+              <p className="text-blue-100 text-sm leading-relaxed">
+                Accede a miles de vuelos con los mejores precios del mercado. Compara, reserva y vuela hacia tus sueños.
+              </p>
+              <p className="text-blue-300 text-xs font-medium pt-2">
+                ✈️ Más de 50 destinos disponibles
+              </p>
+            </div>
+          </div>
+
+          {/* COLUMNA DERECHA - Formulario de Login */}
+          <div className="bg-white rounded-2xl shadow-2xl p-8 space-y-6">
+            {/* Encabezado */}
+            <div className="space-y-2">
+              <h2 className="text-3xl font-bold text-gray-900">Bienvenido</h2>
+              <p className="text-gray-600 text-sm leading-relaxed">
+                Inicia sesión para acceder a tu cuenta y gestiona todas tus reservas
+              </p>
+            </div>
+
+            {/* Botón principal */}
+            <button
+              onClick={handleAuth0Login}
+              className="w-full py-3 px-6 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="12" cy="12" r="10" opacity="0.1" />
+                <circle cx="12" cy="8" r="3" />
+                <path d="M6 14c0-2.21 2.69-4 6-4s6 1.79 6 4" />
+              </svg>
+              <span>Continuar con Auth0</span>
+            </button>
+
+            {/* Divisor */}
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
+                <div className="w-full border-t border-gray-200"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">
-                  Sistema de autenticación OAuth2
+                <span className="px-3 bg-white text-gray-600 font-medium">
+                  Ventajas de viajar con nosotros
                 </span>
               </div>
             </div>
 
-            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-              <p className="text-sm text-blue-800 mb-3">
-                <strong>Beneficios de Auth0:</strong>
-              </p>
-              <ul className="text-sm text-blue-800 space-y-1">
-                <li>✓ Autenticación segura y cifrada</li>
-                <li>✓ Inicio de sesión con Google, Facebook, etc.</li>
-                <li>✓ Recuperación de contraseña fácil</li>
-                <li>✓ Protección contra ataques</li>
-              </ul>
+            {/* Grid de beneficios - CORREGIDO */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 border border-blue-200">
+                <div className="w-8 h-8 rounded-lg bg-blue-200 flex items-center justify-center mb-2">
+                  <Shield className="w-4 h-4 text-blue-700" />
+                </div>
+                <p className="text-xs font-bold text-gray-900">100% Seguro</p>
+                <p className="text-xs text-gray-700 mt-1">Certificado SSL</p>
+              </div>
+
+              <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-3 border border-green-200">
+                <div className="w-8 h-8 rounded-lg bg-green-200 flex items-center justify-center mb-2">
+                  <Plane className="w-4 h-4 text-green-700" />
+                </div>
+                <p className="text-xs font-bold text-gray-900">Miles Vuelos</p>
+                <p className="text-xs text-gray-700 mt-1">50+ destinos</p>
+              </div>
+
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-3 border border-purple-200">
+                <div className="w-8 h-8 rounded-lg bg-purple-200 flex items-center justify-center mb-2">
+                  <Clock className="w-4 h-4 text-purple-700" />
+                </div>
+                <p className="text-xs font-bold text-gray-900">Rápido</p>
+                <p className="text-xs text-gray-700 mt-1">3 pasos</p>
+              </div>
+
+              <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-3 border border-orange-200">
+                <div className="w-8 h-8 rounded-lg bg-orange-200 flex items-center justify-center mb-2">
+                  <Mail className="w-4 h-4 text-orange-700" />
+                </div>
+                <p className="text-xs font-bold text-gray-900">Soporte 24/7</p>
+                <p className="text-xs text-gray-700 mt-1">Siempre disponible</p>
+              </div>
             </div>
 
-            {debugInfo && (
-              <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-red-800 mb-2">
-                      Información de Debug:
-                    </p>
-                    <pre className="text-xs text-red-700 overflow-auto max-h-40">
-                      {JSON.stringify(debugInfo, null, 2)}
-                    </pre>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="mt-6 text-center">
-              <p className="text-gray-600">
+            {/* Footer */}
+            <div className="space-y-3 pt-4 border-t border-gray-200">
+              <p className="text-center text-sm text-gray-700">
                 ¿No tienes cuenta?{' '}
-                <Link to="/register" className="text-primary font-semibold hover:underline">
+                <a href="#" className="text-blue-600 font-semibold hover:underline">
                   Regístrate aquí
-                </Link>
+                </a>
               </p>
+              <div className="flex items-center justify-center gap-3 text-xs text-gray-500">
+                <a href="#" className="hover:text-gray-900 transition-colors">Términos</a>
+                <span>•</span>
+                <a href="#" className="hover:text-gray-900 transition-colors">Privacidad</a>
+                <span>•</span>
+                <a href="#" className="hover:text-gray-900 transition-colors">Soporte</a>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="mt-4 p-4 bg-gray-100 rounded-lg text-xs">
-          <p className="font-semibold mb-2">Configuración actual:</p>
-          <p>Domain: {AUTH0_DOMAIN}</p>
-          <p>Client ID: {AUTH0_CLIENT_ID}</p>
-          <p>Redirect URI: {REDIRECT_URI}</p>
-          <p>Audience: {AUTH0_AUDIENCE}</p>
-          <p className="mt-2 text-red-600">
-            ⚠️ Verifica estas configuraciones en el Dashboard de Auth0
+        {/* Información móvil */}
+        <div className="md:hidden text-white text-center mt-12 space-y-3">
+          <h2 className="text-2xl font-bold">Descubre tu próximo destino</h2>
+          <p className="text-sm text-blue-200">
+            Accede a miles de vuelos con los mejores precios
           </p>
         </div>
       </div>
+
+      {/* Estilos */}
+      <style>{`
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-20px);
+          }
+        }
+      `}</style>
     </div>
   );
 }

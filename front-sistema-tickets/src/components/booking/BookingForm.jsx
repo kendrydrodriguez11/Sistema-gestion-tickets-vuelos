@@ -30,7 +30,7 @@ export default function BookingForm() {
   return (
     <div className="space-y-6">
       {/* Información del Vuelo */}
-      <Card>
+      <Card className="border-l-4 border-l-primary">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="w-5 h-5" />

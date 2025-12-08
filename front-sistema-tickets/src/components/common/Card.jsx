@@ -18,8 +18,8 @@ export default function Card({
   padding = 'md',
   ...props
 }) {
-  const baseClasses = 'bg-white rounded-xl shadow-md transition-all duration-300';
-  
+  const baseClasses = 'bg-white rounded-xl transition-all duration-300 border border-gray-100 hover:border-gray-200';
+
   const paddingClasses = {
     none: '',
     sm: 'p-3',

@@ -64,9 +64,16 @@ export default function FlightSearch() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container">
-        {/* Buscador */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
-          <FlightSearchForm onSearch={handleSearch} />
+        {/* Buscador Premium */}
+        <div className="mb-8">
+          <div className="gradient-primary rounded-2xl shadow-xl p-8 text-white mb-6">
+            <h1 className="text-4xl font-bold mb-2">Encuentra tu vuelo perfecto</h1>
+            <p className="text-white/80">Los mejores precios en vuelos nacionales e internacionales</p>
+          </div>
+          
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            <FlightSearchForm onSearch={handleSearch} />
+          </div>
         </div>
 
         {/* Resultados */}

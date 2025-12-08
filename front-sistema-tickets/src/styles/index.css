@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
 
 /* Tailwind v4 - Nueva sintaxis */
 @import "tailwindcss";
@@ -10,14 +10,17 @@
 }
 
 :root {
-  /* Colores principales */
-  --primary: #E2001A;
-  --primary-dark: #B80015;
-  --primary-light: #FF1A35;
+  /* Colores profesionales inspirados en LATAM */
+  --primary: #1E3A8A;
+  --primary-dark: #1E40AF;
+  --primary-light: #3B82F6;
   
-  --secondary: #002F87;
-  --secondary-dark: #001F5C;
-  --secondary-light: #1A4DA8;
+  --secondary: #DC2626;
+  --secondary-dark: #991B1B;
+  --secondary-light: #EF4444;
+  
+  --accent: #059669;
+  --accent-dark: #047857;
   
   --gray-50: #F9FAFB;
   --gray-100: #F3F4F6;
@@ -35,7 +38,7 @@
   --error: #EF4444;
   --info: #3B82F6;
   
-  --transition: all 0.3s ease;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 body {
@@ -43,12 +46,19 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: var(--gray-50);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.5px;
 }
 
 /* Scrollbar personalizado */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
@@ -57,7 +67,7 @@ body {
 
 ::-webkit-scrollbar-thumb {
   background: var(--gray-400);
-  border-radius: 4px;
+  border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -66,7 +76,7 @@ body {
 
 /* Clases personalizadas */
 .container {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
   padding: 0 1.5rem;
 }
@@ -75,7 +85,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.75rem 1.5rem;
+  padding: 0.875rem 1.75rem;
   border: none;
   border-radius: 8px;
   font-weight: 600;
@@ -84,26 +94,31 @@ body {
   transition: var(--transition);
   text-decoration: none;
   gap: 0.5rem;
+  font-family: 'Poppins', sans-serif;
 }
 
 .btn-primary {
   background: var(--primary);
   color: white;
+  box-shadow: 0 4px 12px rgba(30, 58, 138, 0.15);
 }
 
 .btn-primary:hover {
   background: var(--primary-dark);
   transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 12px 24px rgba(30, 58, 138, 0.25);
 }
 
 .btn-secondary {
   background: var(--secondary);
   color: white;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
 }
 
 .btn-secondary:hover {
   background: var(--secondary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(220, 38, 38, 0.25);
 }
 
 .btn-outline {
@@ -115,9 +130,10 @@ body {
 .btn-outline:hover {
   background: var(--primary);
   color: white;
+  transform: translateY(-2px);
 }
 
-/* Animaciones */
+/* Animaciones premium */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -129,8 +145,15 @@ body {
   }
 }
 
-.fade-in {
-  animation: fadeIn 0.5s ease-out;
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 @keyframes slideUp {
@@ -144,6 +167,88 @@ body {
   }
 }
 
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.6s ease-out;
+}
+
 .animate-slideUp {
-  animation: slideUp 0.3s ease-out;
+  animation: slideUp 0.4s ease-out;
+}
+
+.animate-slideInLeft {
+  animation: slideInLeft 0.5s ease-out;
+}
+
+/* Glassmorphism */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Gradientes profesionales */
+.gradient-primary {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+}
+
+.gradient-secondary {
+  background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-dark) 100%);
+}
+
+/* Sombras mejoradas */
+.shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.shadow-md {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.shadow-xl {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Input mejorado */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="date"],
+input[type="number"],
+select,
+textarea {
+  transition: var(--transition);
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="date"]:focus,
+input[type="number"]:focus,
+select:focus,
+textarea:focus {
+  box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+}
+
+/* Hover effects */
+.card-hover {
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
 }
