@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom';
 import { Search, Shield, Clock, Award, Globe, Users, TrendingUp } from 'lucide-react';
 import Card from '../components/common/Card';
+import useAuthStore from '../store/authStore';
 
 export default function Home() {
+  const { isAuthenticated } = useAuthStore();
+
   const popularDestinations = [
     { city: 'Quito', code: 'UIO', image: 'https://images.unsplash.com/photo-1612892483236-52d32a0e0ac1?w=800', price: '49' },
     { city: 'Guayaquil', code: 'GYE', image: 'https://images.unsplash.com/photo-1501952476817-d7ae22e8ee4e?w=800', price: '65' },
@@ -12,7 +15,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section con Diseño Mejorado */}
+      {/* Hero Section */}
       <section 
         className="relative h-[700px] flex items-center justify-center text-white overflow-hidden"
         style={{
@@ -48,12 +51,14 @@ export default function Home() {
                 <Search className="w-6 h-6" />
                 Buscar Vuelos
               </Link>
-              <Link 
-                to="/my-bookings" 
-                className="btn btn-outline inline-flex items-center gap-3 text-lg px-10 py-5 bg-white/10 backdrop-blur-sm border-2 border-white/30 hover:bg-white/20"
-              >
-                Ver Mis Reservas
-              </Link>
+              {isAuthenticated && (
+                <Link 
+                  to="/my-bookings" 
+                  className="btn btn-outline inline-flex items-center gap-3 text-lg px-10 py-5 bg-white/10 backdrop-blur-sm border-2 border-white/30 hover:bg-white/20"
+                >
+                  Ver Mis Reservas
+                </Link>
+              )}
             </div>
             
             {/* Stats */}
