@@ -20,8 +20,6 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
-import java.util.List;
-
 @RequiredArgsConstructor
 @Configuration
 @EnableWebSecurity
@@ -46,8 +44,6 @@ public class SecurityConfig {
         );
 
         http
-                // ❌ ELIMINAR esta línea de CORS
-                // .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/auth/**").permitAll()
@@ -84,29 +80,12 @@ public class SecurityConfig {
 
         OAuth2TokenValidator<Jwt> audienceValidator = new AudienceValidator(audience);
         OAuth2TokenValidator<Jwt> withIssuer = JwtValidators.createDefaultWithIssuer(issuerUri);
-        OAuth2TokenValidator<Jwt> withAudience = new DelegatingOAuth2TokenValidator<>(withIssuer, audienceValidator);
+        OAuth2TokenValidator<Jwt> withAudience =
+                new DelegatingOAuth2TokenValidator<>(withIssuer, audienceValidator);
 
         jwtDecoder.setJwtValidator(withAudience);
         return jwtDecoder;
     }
-
-    // ❌ ELIMINAR TODO ESTE BEAN corsConfigurationSource
-    /*
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("*"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
-        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
-        configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-    }
-    */
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -121,7 +100,8 @@ public class SecurityConfig {
         }
 
         public OAuth2TokenValidatorResult validate(Jwt jwt) {
-            OAuth2Error error = new OAuth2Error("invalid_token", "The required audience is missing", null);
+            OAuth2Error error =
+                    new OAuth2Error("invalid_token", "The required audience is missing", null);
 
             if (jwt.getAudience().contains(audience)) {
                 return OAuth2TokenValidatorResult.success();

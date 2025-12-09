@@ -34,7 +34,8 @@ public class RouterValidator {
 
         // Check exact matches
         boolean isOpenEndpoint = OPEN_API_ENDPOINTS.stream()
-                .anyMatch(openPath -> path.equals(openPath) || path.startsWith(openPath));
+                .anyMatch(openPath -> path.equals(openPath));
+
 
         if (isOpenEndpoint) {
             return false;

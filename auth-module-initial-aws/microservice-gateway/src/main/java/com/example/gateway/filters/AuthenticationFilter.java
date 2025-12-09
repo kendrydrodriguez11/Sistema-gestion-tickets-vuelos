@@ -27,70 +27,68 @@ public class AuthenticationFilter implements GlobalFilter {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getURI().getPath();
         String method = request.getMethod().toString();
-
         log.info("Gateway Request: {} {}", method, path);
 
-        // Verificar si es ruta pública
+        // Rutas públicas
         if (!routerValidator.isSecured(request)) {
-            log.info("Ruta pública - Sin validación de token: {}", path);
+            log.info("Ruta pública - Sin validación: {}", path);
             return chain.filter(exchange);
         }
-
-        log.info("Ruta protegida - Validando token Auth0: {}", path);
-
+        log.info("Ruta protegida - Validando token: {}", path);
         // Obtener Authorization header
         String authHeader = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-
         if (authHeader == null) {
-            log.warn("Header Authorization faltante para: {}", path);
-            return onError(exchange, "Token de autenticación faltante", HttpStatus.UNAUTHORIZED);
+            log.warn("Authorization faltante en {}", path);
+            return onError(exchange, "Token faltante", HttpStatus.UNAUTHORIZED);
         }
 
         if (!authHeader.toLowerCase().startsWith("bearer ")) {
-            log.warn("Token mal formado (no inicia con 'Bearer') para: {}", path);
+            log.warn("Token mal formado en {}", path);
             return onError(exchange, "Formato de token inválido", HttpStatus.UNAUTHORIZED);
         }
 
-        // Extraer token (quitar "Bearer ")
         String token = authHeader.substring(7);
-        log.debug("Validando token Auth0 para: {}", token);
+        log.debug("Validando token {}", token);
 
-        // Validar token con el servicio de autenticación
+        // Validar token en AuthWebClient
         return authWebClient.validateToken(token)
                 .flatMap(response -> {
                     Boolean isActive = (Boolean) response.get("active");
-
                     if (Boolean.TRUE.equals(isActive)) {
-                        log.info("Token Auth0 válido - Permitiendo acceso a: {}", path);
-
-                        // Opcionalmente, agregar información del usuario al header
+                        log.info("Token válido - Acceso permitido a {}", path);
                         String username = (String) response.get("username");
+
                         if (username != null) {
-                            ServerHttpRequest modifiedRequest = exchange.getRequest()
-                                    .mutate()
+                            ServerHttpRequest modifiedRequest = request.mutate()
                                     .header("X-User-Email", username)
                                     .build();
-                            return chain.filter(exchange.mutate().request(modifiedRequest).build());
+                            return chain.filter(
+                                    exchange.mutate().request(modifiedRequest).build()
+                            );
                         }
-
                         return chain.filter(exchange);
-                    } else {
-                        log.warn("Token Auth0 inválido o expirado para: {}", path);
-                        return onError(exchange, "Token inválido o expirado", HttpStatus.UNAUTHORIZED);
                     }
+
+                    log.warn("Token inválido o expirado en {}", path);
+                    return onError(exchange, "Token inválido o expirado", HttpStatus.UNAUTHORIZED);
                 })
                 .onErrorResume(e -> {
-                    log.error("Error al validar token Auth0 para {}: {}", path, e.getMessage());
+                    log.error("Error validando token en {}: {}", path, e.getMessage());
                     return onError(exchange, "Error en autenticación", HttpStatus.INTERNAL_SERVER_ERROR);
                 });
     }
+
+
+
 
     private Mono<Void> onError(ServerWebExchange exchange, String message, HttpStatus status) {
         ServerHttpResponse response = exchange.getResponse();
         response.setStatusCode(status);
 
-        log.error("Rechazando request: {} - Status: {}",
-                exchange.getRequest().getURI().getPath(), status);
+        log.error("Request rechazado: {} - Status: {}",
+                exchange.getRequest().getURI().getPath(),
+                status
+        );
 
         return response.setComplete();
     }

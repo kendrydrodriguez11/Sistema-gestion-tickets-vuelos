@@ -5,7 +5,6 @@ import authApi from '../api/authApi';
 export const useAuthStore = create(
   persist(
     (set, get) => ({
-      // Estado
       user: null,
       accessToken: null,
       idToken: null,
@@ -13,80 +12,47 @@ export const useAuthStore = create(
       isLoading: false,
       error: null,
 
-      // Guardar tokens de Auth0
       setTokens: (accessToken, idToken = null) => {
-        console.log('🔐 Guardando tokens de Auth0...');
-        
-        // Guardar en localStorage
         localStorage.setItem('accessToken', accessToken);
-        if (idToken) {
-          localStorage.setItem('idToken', idToken);
-        }
-        
-        // Actualizar estado
-        set({ 
-          accessToken, 
+        if (idToken) localStorage.setItem('idToken', idToken);
+        set({
+          accessToken,
           idToken,
-          isAuthenticated: true 
+          isAuthenticated: true
         });
-        
-        console.log('✅ Tokens guardados correctamente');
       },
 
-      // Cargar perfil del usuario desde Auth0
+
       loadUserProfile: async () => {
-        console.log('👤 Cargando perfil del usuario...');
         set({ isLoading: true });
-        
         try {
           const token = localStorage.getItem('accessToken');
-          
-          if (!token) {
-            console.error('❌ No hay token en localStorage');
-            throw new Error('No access token available');
-          }
-          
-          console.log('✓ Token encontrado, haciendo petición a /api/auth/me...');
-          
-          // Obtener perfil del usuario
+          if (!token) throw new Error('No access token available');
           const userData = await authApi.getProfile();
-          
-          console.log('✅ Perfil cargado:', userData);
-          
-          set({ 
-            user: userData, 
+          set({
+            user: userData,
             isAuthenticated: true,
             isLoading: false,
             error: null
           });
-          
           return userData;
-          
         } catch (error) {
-          console.error('❌ Error cargando perfil:', error.message);
-          
-          // Limpiar en caso de error
-          set({ 
-            user: null, 
-            isAuthenticated: false,
-            isLoading: false,
+          set({
+            user: null,
             accessToken: null,
             idToken: null,
+            isAuthenticated: false,
+            isLoading: false,
             error: error.message
           });
-          
           localStorage.removeItem('accessToken');
           localStorage.removeItem('idToken');
-          
           throw error;
         }
       },
 
-      // Cerrar sesión
+
       logout: () => {
-        console.log('👋 Cerrando sesión...');
-        
-        // Limpiar estado
         set({
           user: null,
           accessToken: null,
@@ -95,19 +61,14 @@ export const useAuthStore = create(
           error: null,
           isLoading: false
         });
-        
-        // Limpiar localStorage
+
         localStorage.removeItem('accessToken');
         localStorage.removeItem('idToken');
         localStorage.removeItem('user');
-        
-        console.log('✅ Sesión cerrada');
       },
 
-      // Limpiar errores
+      
       clearError: () => set({ error: null }),
-
-      // Verificar si el token aún es válido (opcional)
       isTokenValid: () => {
         const token = localStorage.getItem('accessToken');
         return !!token;

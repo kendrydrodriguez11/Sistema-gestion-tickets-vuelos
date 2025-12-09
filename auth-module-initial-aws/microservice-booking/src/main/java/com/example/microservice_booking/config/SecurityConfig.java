@@ -25,7 +25,6 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         // Endpoints públicos
@@ -58,7 +57,16 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("*"));
+
+        // ✅ OPCIÓN 1: Origen específico (Recomendado para producción)
+        configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:3000",
+                "http://localhost:3001"
+        ));
+
+        // ⚠️ OPCIÓN 2: Si necesitas aceptar cualquier origen (usar solo en desarrollo)
+        // configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:*"));
+
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
@@ -70,4 +78,3 @@ public class SecurityConfig {
         return source;
     }
 }
-

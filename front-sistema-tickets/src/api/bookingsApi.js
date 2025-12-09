@@ -35,13 +35,27 @@ export const bookingsApi = {
     return response.data;
   },
 
-  // Obtener reservas del usuario
+  // Obtener reservas del usuari
+
+
   getUserBookings: async (userId, page = 0, size = 10) => {
+  try {
     const response = await axiosInstance.get(`/api/bookings/user/${userId}`, {
       params: { page, size }
     });
     return response.data;
+
+  } catch (error) {
+    console.error("❌ Error al obtener las reservas:", error);
+
+    // Puedes mandar un mensaje más claro al front
+    throw new Error(
+      error.response?.data?.message ||
+      "Error al cargar las reservas del usuario"
+    );
   }
+}
+
 };
 
 export default bookingsApi;
