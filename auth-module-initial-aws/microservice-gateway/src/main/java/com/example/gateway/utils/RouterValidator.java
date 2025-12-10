@@ -9,11 +9,9 @@ import java.util.List;
 public class RouterValidator {
 
     private static final List<String> OPEN_API_ENDPOINTS = List.of(
-            "/api/auth/register",
-            "/api/auth/login",
             "/api/auth/introspect",
             "/api/auth/validate",
-            "/api/auth/google/login",
+            "/api/auth/me",
             "/api/aws/create",
             "/api/aws/list",
             "/api/aws/check",
