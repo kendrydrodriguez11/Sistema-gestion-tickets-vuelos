@@ -10,7 +10,7 @@ spring:
       resourceserver:
         jwt:
           # URL del JWK Set del Authorization Server
-          jwk-set-uri: http://localhost:8081/oauth2/jwks
+          jwk-set-uri: http://localhost:8081/api/auth/jwks
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -26,9 +26,15 @@ spring:
     show-sql: true
 
 eureka:
+  instance:
+    hostname: localhost
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true
 
 # 🔥 AGREGAR ESTO A TODOS LOS application.yml de cada microservicio
 

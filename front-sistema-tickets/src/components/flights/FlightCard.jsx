@@ -7,23 +7,66 @@ import { formatCurrency, formatTime, formatFlightDuration } from '../../utils/fo
 export default function FlightCard({ flight, onSelect }) {
   const isLowPrice = flight.priceLevel === 'LOW';
 
+  // ✅ Manejar ambas estructuras de datos (búsqueda vs detalle)
+  const getRouteData = () => {
+    if (flight.route) {
+      // Estructura de FlightDto (con objeto route anidado)
+      return {
+        originAirport: flight.route.originAirport,
+        destinationAirport: flight.route.destinationAirport,
+        originCity: flight.route.originCity,
+        destinationCity: flight.route.destinationCity,
+        estimatedDurationMinutes: flight.route.estimatedDurationMinutes
+      };
+    } else {
+      // Estructura de FlightSearchResponseDto (campos directos)
+      return {
+        originAirport: flight.originAirport,
+        destinationAirport: flight.destinationAirport,
+        originCity: flight.originCity,
+        destinationCity: flight.destinationCity,
+        estimatedDurationMinutes: flight.durationMinutes
+      };
+    }
+  };
+
+  const getAircraftData = () => {
+    if (flight.aircraft) {
+      // Estructura de FlightDto (con objeto aircraft anidado)
+      return {
+        model: flight.aircraft.model,
+        manufacturer: flight.aircraft.manufacturer,
+        totalSeats: flight.aircraft.totalSeats
+      };
+    } else {
+      // Estructura de FlightSearchResponseDto (campos directos)
+      return {
+        model: flight.aircraftModel,
+        manufacturer: flight.aircraftManufacturer,
+        totalSeats: flight.totalSeats
+      };
+    }
+  };
+
+  const route = getRouteData();
+  const aircraft = getAircraftData();
+
   return (
     <Card 
       hover 
-      clickable 
-      onClick={onSelect} 
-      className="border border-gray-200 hover:border-primary transition-all overflow-hidden"
+      className="border border-gray-200 hover:border-primary transition-all overflow-hidden cursor-pointer"
+      onClick={onSelect}
     >
-      <div className="grid md:grid-cols-12 gap-6 items-center p-6">
+      <div className="grid md:grid-cols-3 gap-8 items-center p-6">
         {/* Información del vuelo */}
-        <div className="md:col-span-7">
+        <div className="md:col-span-2">
           <div className="flex items-center gap-4 mb-4">
             <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
               <Plane className="w-6 h-6 text-primary" />
             </div>
             <div>
               <h3 className="text-lg font-bold text-gray-900">{flight.flightNumber}</h3>
-              <p className="text-sm text-gray-500">{flight.aircraftModel}</p>
+              <p className="text-sm text-gray-500">{aircraft.model}</p>
             </div>
           </div>
 
@@ -33,14 +76,14 @@ export default function FlightCard({ flight, onSelect }) {
               <div className="text-2xl font-bold text-primary">
                 {formatTime(flight.departureTime)}
               </div>
-              <div className="text-sm font-semibold text-gray-900">{flight.route.originAirport}</div>
-              <div className="text-xs text-gray-600">{flight.route.originCity}</div>
+              <div className="text-sm font-semibold text-gray-900">{route.originAirport}</div>
+              <div className="text-xs text-gray-600">{route.originCity}</div>
             </div>
 
             {/* Duración */}
             <div className="flex flex-col items-center justify-center">
               <div className="text-xs text-gray-600 mb-2 font-medium">
-                {formatFlightDuration(flight.durationMinutes)}
+                {formatFlightDuration(route.estimatedDurationMinutes)}
               </div>
               <div className="w-full h-1 bg-gradient-to-r from-primary to-primary/50 relative rounded-full">
                 <Plane className="w-4 h-4 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary" style={{transform: 'translate(-50%, -50%) rotate(90deg)'}} />
@@ -53,8 +96,8 @@ export default function FlightCard({ flight, onSelect }) {
               <div className="text-2xl font-bold text-primary">
                 {formatTime(flight.arrivalTime)}
               </div>
-              <div className="text-sm font-semibold text-gray-900">{flight.route.destinationAirport}</div>
-              <div className="text-xs text-gray-600">{flight.route.destinationCity}</div>
+              <div className="text-sm font-semibold text-gray-900">{route.destinationAirport}</div>
+              <div className="text-xs text-gray-600">{route.destinationCity}</div>
             </div>
           </div>
 
@@ -75,41 +118,38 @@ export default function FlightCard({ flight, onSelect }) {
         </div>
 
         {/* Precio y acción */}
-        <div className="md:col-span-5 border-l border-gray-100 pl-6">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <div className="text-xs text-gray-500 mb-1">Desde</div>
-              <div className="text-gray-400 line-through text-sm">
-                {formatCurrency(flight.basePrice)}
-              </div>
-            </div>
+        <div className="md:col-span-1 text-center md:text-right">
+          <div className="mb-3">
             {isLowPrice && (
-              <Badge variant="success" className="animate-pulse">
+              <Badge variant="success" className="animate-pulse mb-2">
                 <TrendingDown className="w-3 h-3" />
                 Oferta
               </Badge>
             )}
+            <div className="text-xs text-gray-500 mb-1">Desde</div>
+            <div className="text-gray-400 line-through text-sm">
+              {formatCurrency(flight.basePrice)}
+            </div>
           </div>
 
-          <div className="text-4xl font-bold text-primary mb-2">
+          <div className="text-4xl font-bold text-primary mb-1">
             {formatCurrency(flight.currentPrice)}
           </div>
-          <div className="text-sm text-gray-600 mb-6">por persona</div>
+          <div className="text-sm text-gray-600 mb-4">por persona</div>
 
           <Button
             variant="primary"
-            fullWidth
+            size="md"
             onClick={(e) => {
               e.stopPropagation();
               onSelect();
             }}
-            className="w-full"
           >
-            Seleccionar Vuelo
+            Seleccionar
           </Button>
 
-          <p className="text-xs text-gray-500 text-center mt-3">
-            Equipaje incluido • Cambios permitidos
+          <p className="text-xs text-gray-500 mt-3">
+            Equipaje incluido
           </p>
         </div>
       </div>

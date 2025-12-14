@@ -75,6 +75,8 @@ export default function FlightSearch() {
             <FlightSearchForm onSearch={handleSearch} />
           </div>
         </div>
+        
+        
 
         {/* Resultados */}
         {isLoading ? (

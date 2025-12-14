@@ -40,7 +40,8 @@ public class SecurityConfig {
                 new AntPathRequestMatcher("/api/auth/me"),
                 new AntPathRequestMatcher("/error"),
                 new AntPathRequestMatcher("/actuator/**"),
-                new AntPathRequestMatcher("/.well-known/**")
+                new AntPathRequestMatcher("/.well-known/**"),
+                new AntPathRequestMatcher("/oauth2/jwks")
         );
 
         http
@@ -52,6 +53,7 @@ public class SecurityConfig {
                         .requestMatchers("/.well-known/**").permitAll()
                         .requestMatchers("/api/users/**").authenticated()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/oauth2/jwks").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2

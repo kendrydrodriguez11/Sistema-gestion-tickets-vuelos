@@ -9,7 +9,9 @@ import toast from 'react-hot-toast';
 import useFlightStore from '../../store/flightStore';
 
 export default function FlightSearchForm({ onSearch }) {
+
   const { setSearchParams } = useFlightStore();
+
   const [formData, setFormData] = useState({
     origin: '',
     destination: '',
@@ -17,6 +19,7 @@ export default function FlightSearchForm({ onSearch }) {
     returnDate: '',
     passengers: 1
   });
+
   const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
@@ -28,6 +31,7 @@ export default function FlightSearchForm({ onSearch }) {
     }
   };
 
+
   const validate = () => {
     const newErrors = {};
 
@@ -35,6 +39,7 @@ export default function FlightSearchForm({ onSearch }) {
     newErrors.destination = validateAirportCode(formData.destination, 'destino');
     
     const odError = validateOriginDestination(formData.origin, formData.destination);
+    
     if (odError) {
       newErrors.origin = odError;
       newErrors.destination = odError;
@@ -50,6 +55,8 @@ export default function FlightSearchForm({ onSearch }) {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
+
 
   const handleSubmit = (e) => {
     e.preventDefault();

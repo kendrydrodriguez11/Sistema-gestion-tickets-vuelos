@@ -1,6 +1,7 @@
 package com.example.microservice_flight.config;
 
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -23,6 +24,10 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
 
+
+    @Value("${auth0.domain:dev-chzcisisthlmydkb.us.auth0.com}")
+    private String auth0Domain;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -32,9 +37,11 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/actuator/health",
                                 "/actuator/info",
-                                "/error"
+                                "/error",
+                                "/api/aircraft",
+                                "/api/routes/**",
+                                "/api/flights/**"
                         ).permitAll()
-                        // 🔥 IMPORTANTE: Todos los demás endpoints requieren autenticación
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
@@ -50,9 +57,13 @@ public class SecurityConfig {
 
     @Bean
     public JwtDecoder jwtDecoder() {
-        // URL del Authorization Server (msvc-auth-oauth2)
-        String jwkSetUri = "http://localhost:8081/oauth2/jwks";
-        return NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
+        // Usar Auth0 real en lugar de localhost
+        String jwkSetUri = "https://" + auth0Domain + "/.well-known/jwks.json";
+
+        System.out.println("🔐 Configurando JwtDecoder con: " + jwkSetUri);
+
+        return NimbusJwtDecoder.withJwkSetUri(jwkSetUri)
+                .build();
     }
 
     @Bean

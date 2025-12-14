@@ -37,6 +37,7 @@ public class BookingServiceImpl implements BookingService {
     public BookingDto createBooking(BookingDto dto) {
         log.info("Creating booking for flight: {}", dto.getFlightId());
 
+
         // Generar referencia única
         String reference = generateBookingReference();
 

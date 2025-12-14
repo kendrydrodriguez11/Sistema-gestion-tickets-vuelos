@@ -79,6 +79,7 @@ public class FlightController {
 
     @GetMapping("/{id}/with-pricing")
     public ResponseEntity<FlightDto> getFlightWithDynamicPricing(@PathVariable UUID id) {
+        System.out.println("entro");
         FlightDto flight = flightService.getFlight(id);
         return ResponseEntity.ok(flight);
     }

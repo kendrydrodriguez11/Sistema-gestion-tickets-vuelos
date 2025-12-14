@@ -107,4 +107,23 @@ public class AuthController {
         }
     }
 
+
+    @GetMapping("/jwks")
+    public ResponseEntity<Map<String, Object>> getJwks() {
+        try {
+            String auth0JwksUrl = "https://" + auth0Domain + "/.well-known/jwks.json";
+
+            ResponseEntity<Map> response = restTemplate.exchange(
+                    auth0JwksUrl,
+                    HttpMethod.GET,
+                    null,
+                    Map.class
+            );
+
+            return ResponseEntity.ok((Map<String, Object>) response.getBody());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
 }
