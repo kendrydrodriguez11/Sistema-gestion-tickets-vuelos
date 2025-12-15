@@ -24,7 +24,6 @@ import java.util.UUID;
 public class BookingEntity {
 
     @Id
-    @GeneratedValue
     @JdbcTypeCode(SqlTypes.CHAR)
     @Column(columnDefinition = "CHAR(36)")
     private UUID id;

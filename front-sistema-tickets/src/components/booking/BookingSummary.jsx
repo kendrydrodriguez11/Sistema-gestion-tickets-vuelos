@@ -1,7 +1,7 @@
-import { Plane, MapPin, Calendar, Users, CreditCard } from 'lucide-react';
+import { Plane, MapPin, Calendar, Users } from 'lucide-react';
 import Card, { CardContent, CardHeader, CardTitle } from '../common/Card';
 import Badge from '../common/Badge';
-import { formatCurrency, formatDate, formatTime, formatFlightDuration } from '../../utils/formatters';
+import { formatCurrency, formatDate, formatTime } from '../../utils/formatters';
 import useBookingStore from '../../store/bookingStore';
 
 export default function BookingSummary() {
@@ -89,7 +89,9 @@ export default function BookingSummary() {
         {/* Pasajeros */}
         {passengers.length > 0 && (
           <div className="pt-4 border-t">
-            <div className="font-semibold mb-2">Pasajeros ({passengers.length})</div>
+            <div className="font-semibold mb-2">
+              Pasajeros ({passengers.length})
+            </div>
             <div className="space-y-2">
               {passengers.map((passenger, index) => (
                 <div key={index} className="text-sm text-gray-600">
@@ -104,16 +106,18 @@ export default function BookingSummary() {
         <div className="pt-4 border-t space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Precio por persona</span>
-            <span className="font-semibold">{formatCurrency(selectedFlight.currentPrice)}</span>
+            <span className="font-semibold">
+              {formatCurrency(selectedFlight.currentPrice)}
+            </span>
           </div>
-          
+
           {selectedSeats.length > 0 && (
             <>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Pasajeros</span>
                 <span className="font-semibold">× {selectedSeats.length}</span>
               </div>
-              
+
               <div className="pt-3 border-t">
                 <div className="flex justify-between items-center">
                   <span className="font-bold">Total</span>

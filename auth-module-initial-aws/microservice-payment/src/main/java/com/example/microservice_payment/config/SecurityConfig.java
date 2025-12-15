@@ -23,8 +23,10 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
-    private String jwkSetUri;
+
+
+    @Value("${auth0.domain:dev-chzcisisthlmydkb.us.auth0.com}")
+    private String auth0Domain;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -50,10 +52,15 @@ public class SecurityConfig {
         return http.build();
     }
 
-
     @Bean
     public JwtDecoder jwtDecoder() {
-        return NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
+        // Usar Auth0 real en lugar de localhost
+        String jwkSetUri = "https://" + auth0Domain + "/.well-known/jwks.json";
+
+        System.out.println("🔐 Configurando JwtDecoder con: " + jwkSetUri);
+
+        return NimbusJwtDecoder.withJwkSetUri(jwkSetUri)
+                .build();
     }
 
     @Bean

@@ -103,6 +103,7 @@ export default function BookingForm() {
         </CardContent>
       </Card>
 
+
       {/* Resumen de Pago */}
       <Card>
         <CardHeader>
