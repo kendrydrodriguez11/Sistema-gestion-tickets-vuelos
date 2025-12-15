@@ -17,7 +17,9 @@ export default function BookingSummary() {
     );
   }
 
-  const subtotal = selectedFlight.currentPrice * selectedSeats.length;
+  // 🔥 FIX: Asegurar que siempre tengamos un precio válido
+  const pricePerSeat = selectedFlight.currentPrice || selectedFlight.basePrice || 0;
+  const subtotal = pricePerSeat * selectedSeats.length;
 
   return (
     <Card className="sticky top-24">
@@ -39,7 +41,7 @@ export default function BookingSummary() {
               <div>
                 <div className="font-semibold text-sm">Origen</div>
                 <div className="text-gray-600 text-sm">
-                  {selectedFlight.route.originCity} ({selectedFlight.route.originAirport})
+                  {selectedFlight.route?.originCity || selectedFlight.originCity} ({selectedFlight.route?.originAirport || selectedFlight.originAirport})
                 </div>
               </div>
             </div>
@@ -49,7 +51,7 @@ export default function BookingSummary() {
               <div>
                 <div className="font-semibold text-sm">Destino</div>
                 <div className="text-gray-600 text-sm">
-                  {selectedFlight.route.destinationCity} ({selectedFlight.route.destinationAirport})
+                  {selectedFlight.route?.destinationCity || selectedFlight.destinationCity} ({selectedFlight.route?.destinationAirport || selectedFlight.destinationAirport})
                 </div>
               </div>
             </div>
@@ -107,7 +109,7 @@ export default function BookingSummary() {
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Precio por persona</span>
             <span className="font-semibold">
-              {formatCurrency(selectedFlight.currentPrice)}
+              {formatCurrency(pricePerSeat)}
             </span>
           </div>
 

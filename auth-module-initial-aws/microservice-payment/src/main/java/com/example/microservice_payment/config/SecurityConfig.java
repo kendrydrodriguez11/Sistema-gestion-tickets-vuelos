@@ -23,10 +23,12 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-
+    @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
+    private String jwkSetUri;
 
     @Value("${auth0.domain:dev-chzcisisthlmydkb.us.auth0.com}")
     private String auth0Domain;
+
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -52,9 +54,9 @@ public class SecurityConfig {
         return http.build();
     }
 
+
     @Bean
     public JwtDecoder jwtDecoder() {
-        // Usar Auth0 real en lugar de localhost
         String jwkSetUri = "https://" + auth0Domain + "/.well-known/jwks.json";
 
         System.out.println("🔐 Configurando JwtDecoder con: " + jwkSetUri);
@@ -66,7 +68,16 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("*"));
+
+        // ✅ OPCIÓN 1: Origen específico (Recomendado para producción)
+        configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:3000",
+                "http://localhost:3001"
+        ));
+
+        // ⚠️ OPCIÓN 2: Si necesitas aceptar cualquier origen (usar solo en desarrollo)
+        // configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:*"));
+
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
@@ -78,4 +89,3 @@ public class SecurityConfig {
         return source;
     }
 }
-

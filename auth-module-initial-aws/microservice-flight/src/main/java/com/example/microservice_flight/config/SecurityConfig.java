@@ -1,7 +1,5 @@
 package com.example.microservice_flight.config;
 
-
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -18,15 +16,10 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 import java.util.List;
 
-
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
-
-
-    @Value("${auth0.domain:dev-chzcisisthlmydkb.us.auth0.com}")
-    private String auth0Domain;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -44,9 +37,10 @@ public class SecurityConfig {
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
+
                 .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt.decoder(jwtDecoder()))
-                )
+                .jwt(jwt -> jwt.decoder(jwtDecoder()))
+        )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 );
@@ -54,10 +48,8 @@ public class SecurityConfig {
         return http.build();
     }
 
-
     @Bean
     public JwtDecoder jwtDecoder() {
-        // Usar Auth0 real en lugar de localhost
         String jwkSetUri = "https://" + auth0Domain + "/.well-known/jwks.json";
 
         System.out.println("🔐 Configurando JwtDecoder con: " + jwkSetUri);
@@ -69,7 +61,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("*"));
+        configuration.setAllowedOriginPatterns(List.of("*")); // solo para dev
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
@@ -81,5 +73,3 @@ public class SecurityConfig {
         return source;
     }
 }
-
-

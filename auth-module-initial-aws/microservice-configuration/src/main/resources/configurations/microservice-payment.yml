@@ -5,12 +5,12 @@ spring:
   application:
     name: microservice-payment
 
+
   security:
     oauth2:
       resourceserver:
         jwt:
-          # URL del JWK Set del Authorization Server
-          jwk-set-uri: http://localhost:8081/oauth2/jwks
+          jwk-set-uri: https://dev-chzcisisthlmydkb.us.auth0.com/.well-known/jwks.json
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver

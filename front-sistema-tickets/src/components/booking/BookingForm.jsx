@@ -20,6 +20,10 @@ export default function BookingForm() {
     );
   }
 
+  // 🔥 FIX: Asegurar que siempre tengamos un precio válido
+  const pricePerSeat = selectedFlight.currentPrice || selectedFlight.basePrice || 0;
+  const totalPrice = bookingData.totalPrice || (pricePerSeat * passengers.length);
+
   const handleProceedToPayment = () => {
     if (!acceptedTerms) {
       return;
@@ -50,7 +54,7 @@ export default function BookingForm() {
             <div>
               <div className="text-sm text-gray-500 mb-1">Salida</div>
               <div className="font-semibold">
-                {selectedFlight.route.originCity} ({selectedFlight.route.originAirport})
+                {selectedFlight.route?.originCity || selectedFlight.originCity} ({selectedFlight.route?.originAirport || selectedFlight.originAirport})
               </div>
               <div className="text-sm text-gray-600">
                 {formatDate(selectedFlight.departureTime)} - {formatTime(selectedFlight.departureTime)}
@@ -59,7 +63,7 @@ export default function BookingForm() {
             <div>
               <div className="text-sm text-gray-500 mb-1">Llegada</div>
               <div className="font-semibold">
-                {selectedFlight.route.destinationCity} ({selectedFlight.route.destinationAirport})
+                {selectedFlight.route?.destinationCity || selectedFlight.destinationCity} ({selectedFlight.route?.destinationAirport || selectedFlight.destinationAirport})
               </div>
               <div className="text-sm text-gray-600">
                 {formatDate(selectedFlight.arrivalTime)} - {formatTime(selectedFlight.arrivalTime)}
@@ -103,7 +107,6 @@ export default function BookingForm() {
         </CardContent>
       </Card>
 
-
       {/* Resumen de Pago */}
       <Card>
         <CardHeader>
@@ -116,7 +119,7 @@ export default function BookingForm() {
           <div className="space-y-3">
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Precio por pasajero</span>
-              <span className="font-semibold">{formatCurrency(selectedFlight.currentPrice)}</span>
+              <span className="font-semibold">{formatCurrency(pricePerSeat)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Número de pasajeros</span>
@@ -125,7 +128,7 @@ export default function BookingForm() {
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Subtotal</span>
               <span className="font-semibold">
-                {formatCurrency(selectedFlight.currentPrice * passengers.length)}
+                {formatCurrency(pricePerSeat * passengers.length)}
               </span>
             </div>
             <div className="flex justify-between text-sm">
@@ -136,7 +139,7 @@ export default function BookingForm() {
               <div className="flex justify-between items-center">
                 <span className="font-bold text-lg">Total</span>
                 <span className="font-bold text-2xl text-primary">
-                  {formatCurrency(bookingData.totalPrice)}
+                  {formatCurrency(totalPrice)}
                 </span>
               </div>
             </div>
