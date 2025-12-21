@@ -51,40 +51,66 @@ export default function Payment() {
   }, [bookingData, navigate]);
 
   const handlePayment = async (paymentMethod) => {
-    if (!bookingData) {
-      toast.error('No hay datos de reserva');
+  if (!bookingData) {
+    toast.error('No hay datos de reserva');
+    return;
+  }
+
+  // 🔥 FIX: Calcular el precio si no existe en bookingData
+  let totalAmount = bookingData.totalPrice;
+  
+  if (!totalAmount || totalAmount <= 0) {
+    if (selectedFlight && selectedFlight.currentPrice) {
+      const passengers = bookingData.passengers?.length || 1;
+      totalAmount = selectedFlight.currentPrice * passengers;
+    } else if (selectedFlight && selectedFlight.basePrice) {
+      const passengers = bookingData.passengers?.length || 1;
+      totalAmount = selectedFlight.basePrice * passengers;
+    } else {
+      toast.error('No se pudo calcular el monto total');
       return;
     }
+  }
 
-    setIsProcessing(true);
+  // ✅ Validar que el monto sea válido antes de enviar
+  if (!totalAmount || totalAmount <= 0) {
+    toast.error('El monto del pago debe ser mayor a 0');
+    console.error('Invalid amount:', totalAmount, bookingData);
+    return;
+  }
 
-    try {
-      const paymentData = {
-        bookingId: bookingData.id,
-        amount: bookingData.totalPrice,
-        currency: 'USD',
-        method: paymentMethod,
-        returnUrl: `${window.location.origin}/payment/success`,
-        cancelUrl: `${window.location.origin}/payment/cancel`
-      };
+  console.log('💰 Iniciando pago con monto:', totalAmount);
 
-      const payment = await paymentsApi.initiatePayment(paymentData, user.id);
+  setIsProcessing(true);
 
-      if (payment.approvalUrl) {
-        // Redirigir a PayPal
-        window.location.href = payment.approvalUrl;
-      } else {
-        toast.success('Pago iniciado correctamente');
-        navigate('/payment/success');
-      }
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Error al procesar el pago';
-      toast.error(errorMessage);
-      console.error('Payment error:', error);
-    } finally {
-      setIsProcessing(false);
+  try {
+    const paymentData = {
+      bookingId: bookingData.id,
+      amount: totalAmount, // ✅ Usar el monto calculado
+      currency: 'USD',
+      method: paymentMethod,
+      returnUrl: `${window.location.origin}/payment/success`,
+      cancelUrl: `${window.location.origin}/payment/cancel`
+    };
+
+    console.log('📤 Enviando pago:', paymentData);
+
+    const payment = await paymentsApi.initiatePayment(paymentData, user.id);
+
+    if (payment.approvalUrl) {
+      window.location.href = payment.approvalUrl;
+    } else {
+      toast.success('Pago iniciado correctamente');
+      navigate('/payment/success');
     }
-  };
+  } catch (error) {
+    const errorMessage = error.response?.data?.message || 'Error al procesar el pago';
+    toast.error(errorMessage);
+    console.error('Payment error:', error);
+  } finally {
+    setIsProcessing(false);
+  }
+};  
 
   if (!bookingData) {
     return (

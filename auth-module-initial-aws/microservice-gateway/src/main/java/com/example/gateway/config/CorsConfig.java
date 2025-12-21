@@ -7,7 +7,6 @@ import org.springframework.web.cors.reactive.CorsWebFilter;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
-import java.util.List;
 
 @Configuration
 public class CorsConfig {
@@ -16,34 +15,24 @@ public class CorsConfig {
     public CorsWebFilter corsWebFilter() {
         CorsConfiguration corsConfig = new CorsConfiguration();
 
-        // ✅ Orígenes permitidos - SOLO localhost en desarrollo
         corsConfig.setAllowedOrigins(Arrays.asList(
                 "http://localhost:3000",
                 "http://localhost:3001"
         ));
 
-        // ❌ NO usar allowedOriginPatterns("*") con allowCredentials(true)
-        // Esto causa errores CORS en navegadores modernos
-
-        // Métodos HTTP permitidos
         corsConfig.setAllowedMethods(Arrays.asList(
                 "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"
         ));
 
-        // Headers permitidos
         corsConfig.setAllowedHeaders(Arrays.asList("*"));
 
-        // Headers expuestos (para que el frontend pueda leerlos)
         corsConfig.setExposedHeaders(Arrays.asList(
                 "Authorization",
                 "Content-Type",
                 "X-User-Id"
         ));
 
-        // ✅ IMPORTANTE: Permitir credenciales (cookies, authorization headers)
         corsConfig.setAllowCredentials(true);
-
-        // Tiempo de cache para preflight requests (1 hora)
         corsConfig.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
