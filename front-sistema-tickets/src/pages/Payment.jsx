@@ -233,53 +233,6 @@ export default function Payment() {
                       </div>
                     </div>
                   </div>
-
-                  <div className="pt-4 border-t">
-                    <div className="text-sm text-gray-500 mb-2">
-                      Pasajeros ({bookingData.passengers?.length || 0})
-                    </div>
-                    <div className="space-y-2">
-                      {bookingData.passengers?.map((passenger, index) => (
-                        <div 
-                          key={index}
-                          className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
-                        >
-                          <div>
-                            <div className="font-medium">
-                              {passenger.firstName} {passenger.lastName}
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              {passenger.documentType}: {passenger.documentNumber}
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="font-semibold text-primary">
-                              Asiento {passenger.seatNumber}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t">
-                    <div className="flex justify-between items-center text-sm mb-2">
-                      <span className="text-gray-600">Subtotal</span>
-                      <span className="font-semibold">
-                        {formatCurrency(bookingData.totalPrice)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm mb-2">
-                      <span className="text-gray-600">Tasas e impuestos</span>
-                      <span className="font-semibold">{formatCurrency(0)}</span>
-                    </div>
-                    <div className="flex justify-between items-center pt-3 border-t">
-                      <span className="font-bold text-lg">Total a Pagar</span>
-                      <span className="font-bold text-3xl text-primary">
-                        {formatCurrency(bookingData.totalPrice)}
-                      </span>
-                    </div>
-                  </div>
                 </div>
               </CardContent>
             </Card>

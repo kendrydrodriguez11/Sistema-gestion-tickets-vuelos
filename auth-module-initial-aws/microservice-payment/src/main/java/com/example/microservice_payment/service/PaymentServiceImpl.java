@@ -45,6 +45,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .findByBookingId(dto.getBookingId())
                 .orElse(null);
 
+
         if (existingPayment != null) {
             log.info("Payment already exists for booking: {}", dto.getBookingId());
             return mapToDto(existingPayment);

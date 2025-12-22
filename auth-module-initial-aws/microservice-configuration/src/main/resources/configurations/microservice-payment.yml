@@ -9,13 +9,13 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: https://example.auth0.com/.well-known/jwks.json
+          jwk-set-uri: https://dev-chzcisisthlmydkb.us.auth0.com/.well-known/jwks.json
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/payment_db
-    username: db_user
-    password: db_password
+    username: root
+    password: ken123
 
   jpa:
     hibernate:
@@ -27,13 +27,13 @@ spring:
   rabbitmq:
     host: localhost
     port: 5672
-    username: rabbit_user
-    password: rabbit_password
+    username: guest
+    password: guest
 
 paypal:
   mode: sandbox
-  client-id: PAYPAL_CLIENT_ID
-  client-secret: PAYPAL_CLIENT_SECRET
+  client-id: AQyI4B5Jjyic4yrHAGcdLPrL9F96zLMOT0IfoxLJHyRdpkCbMtoy_XD8bVIASfpqK0hrdXqHm5lNwM5v
+  client-secret: EFq9v1wswJG4witYNOk1ibt9knEJ86FWXPdWfVGT1RA18IeTQnD4HOpTgM-NmBWSuMttgaHkV8WkiDVW
   return-url: http://localhost:3000/payment/success
   cancel-url: http://localhost:3000/payment/cancel
 

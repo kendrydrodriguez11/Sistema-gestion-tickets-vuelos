@@ -1,49 +1,23 @@
 server:
-  port: 8081
+  port: 8082
 
 spring:
   application:
-    name: msvc-auth-oauth2
-
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/auth_oauth2_db
-    username: ${DB_USER}
-    password: ${DB_PASSWORD}
-
-  jpa:
-    hibernate:
-      ddl-auto: update
-      database-platform: org.hibernate.dialect.MySQL8Dialect
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-
-  data:
-    redis:
-      host: localhost
-      port: 6380
+    name: microservice-aws
 
   security:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: https://example.auth0.com/
-          jwk-set-uri: https://example.auth0.com/.well-known/jwks.json
+          # URL del JWK Set del Authorization Server
+          jwk-set-uri: http://localhost:8081/oauth2/jwks
 
-auth0:
-  domain: example.auth0.com
-  audience: https://api.example.com
-  client-id: ${AUTH0_CLIENT_ID}
-  client-secret: ${AUTH0_CLIENT_SECRET}
-
-app:
-  frontend:
-    url: http://localhost:3000
-  allowed-origins:
-    - http://localhost:3000
-    - http://localhost:3001
+  aws:
+    secret:
+      key:
+    access:
+      key:
+    region: us-east-1
 
 eureka:
   instance:
@@ -55,6 +29,7 @@ eureka:
       defaultZone: http://localhost:8761/eureka/
     fetch-registry: true
     register-with-eureka: true
+
 
 management:
   endpoints:
