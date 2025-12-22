@@ -8,8 +8,8 @@ spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/auth_oauth2_db
-    username: root
-    password: ken123
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
 
   jpa:
     hibernate:
@@ -29,14 +29,14 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: https://dev-chzcisisthlmydkb.us.auth0.com/
-          jwk-set-uri: https://dev-chzcisisthlmydkb.us.auth0.com/.well-known/jwks.json
+          issuer-uri: ${AUTH0_ISSUER_URI}
+          jwk-set-uri: ${AUTH0_JWK_URI}
 
 auth0:
-  domain: dev-chzcisisthlmydkb.us.auth0.com
-  audience: https://api.miapp.com
-  client-id: zaSgoGFBnnNkvlUbNJv9qMrADRJn4wbp
-  client-secret: Gr95txgUIxdbs4EZDfEQRKqtf6oYcvsAI-gj42Ufu2zOb-4fxiQO5zJqjQuIUzmD
+  domain: ${AUTH0_DOMAIN}
+  audience: ${AUTH0_AUDIENCE}
+  client-id: ${AUTH0_CLIENT_ID}
+  client-secret: ${AUTH0_CLIENT_SECRET}
 
 app:
   frontend:
